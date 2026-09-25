@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aerocast-AI | Multimodal Thunderstorm & Lightning Nowcasting Platform</title>
+  <meta name="description" content="AI/ML Nowcasting of severe thunderstorms and lightning using Doppler Weather Radar, INSAT-3D Satellite, Lightning detection networks and NWP model data.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Leaflet GIS CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="brand-section">
+      <div class="brand-logo">
+        <i class="fa-solid fa-bolt-lightning bolt-glow"></i>
+        <div class="brand-text">
+          <span class="brand-title">AEROCAST<span class="accent-text">-AI</span></span>
+          <span class="brand-subtitle">Multimodal Thunderstorm & Lightning Nowcaster</span>
+        </div>
+      </div>
+      <div class="system-status-badge">
+        <span class="status-dot pulsing"></span>
+        <span id="systemStatusText">OPERATIONAL</span>
+      </div>
+    </div>
+
+    <!-- Center Region & Lead Time Selection -->
+    <div class="nav-controls">
+      <div class="region-select-wrapper" title="Select Doppler Weather Radar Station">
+        <i class="fa-solid fa-location-dot"></i>
+        <select id="regionSelector" class="custom-select" aria-label="Forecast Region">
+          <option value="hyderabad">Hyderabad &amp; Telangana (DWR Begumpet)</option>
+          <option value="kolkata">Kolkata &amp; Bengal (Nor'wester / Kalbaisakhi)</option>
+          <option value="delhi">Delhi-NCR &amp; Western UP (Mausam Bhawan)</option>
+          <option value="bhubaneswar">Bhubaneswar &amp; Odisha Coast (DWR Paradip)</option>
+          <option value="mumbai">Mumbai &amp; Konkan Coast (DWR Veravali)</option>
+          <option value="chennai">Chennai &amp; Coastal TN (DWR Sriharikota)</option>
+          <option value="guwahati">Guwahati &amp; Assam Valley (DWR Borjhar)</option>
+          <option value="bengaluru">Bengaluru &amp; South Karnataka (DWR Bengaluru)</option>
+        </select>
+      </div>
+
+      <div class="lead-tabs" role="tablist" title="Select AI Forecast Horizon">
+        <button class="tab-btn active" data-lead="30m" id="tab30m"><i class="fa-regular fa-clock"></i> +30 Min</button>
+        <button class="tab-btn" data-lead="60m" id="tab60m"><i class="fa-regular fa-clock"></i> +60 Min</button>
+        <button class="tab-btn" data-lead="90m" id="tab90m"><i class="fa-regular fa-clock"></i> +90 Min</button>
+      </div>
+    </div>
+
+    <!-- Right Action Buttons -->
+    <div class="header-actions">
+      <button class="btn btn-guide" id="btnOpenGuide" title="Learn how to use this platform in 1 minute">
+        <i class="fa-solid fa-book-open-reader"></i> User Guide
+      </button>
+      <button class="btn btn-outline" id="btnOpenSounding" title="Thermodynamic Skew-T Sounding Profile">
+        <i class="fa-solid fa-chart-area"></i> Skew-T Sounding
+      </button>
+      <button class="btn btn-outline" id="btnOpenMeteogram" title="Nowcast Trend Meteogram Time-Series">
+        <i class="fa-solid fa-chart-simple"></i> Meteogram
+      </button>
+      <button class="btn btn-outline btn-highlight" id="btnOpenSandbox" title="Test AI with custom atmospheric parameters">
+        <i class="fa-solid fa-sliders"></i> What-If Sandbox
+      </button>
+      <button class="btn btn-outline" id="btnOpenMetrics" title="Model verification metrics &amp; AI Benchmarks">
+        <i class="fa-solid fa-chart-line"></i> Model AI Stats
+      </button>
+      <button class="btn btn-alert" id="btnOpenAlerts" title="Active CAP Early Warnings">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span class="alert-count-badge" id="alertCountBadge">1</span> Alerts
+      </button>
+      <button class="btn btn-icon-only" id="btnToggleAudio" title="Toggle Audio Siren Chime" aria-label="Toggle Alert Audio">
+        <i class="fa-solid fa-volume-high" id="audioIcon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Emergency Warning Banner -->
+  <div id="topAlertBanner" class="alert-banner severe hidden">
+    <div class="alert-banner-content">
+      <i class="fa-solid fa-circle-exclamation banner-icon"></i>
+      <div class="banner-text">
+        <strong id="bannerHeadline">RED ALERT: Severe Thunderstorm &amp; Lightning Warning</strong>
+        <span id="bannerDetails">High probability convective core approaching Hyderabad. Expected onset within 30 min.</span>
+      </div>
+    </div>
+    <div class="banner-actions">
+      <button class="btn btn-sm btn-light" id="btnViewAlertDetails">View Safety Directives</button>
+      <button class="banner-close" id="btnCloseBanner"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Layout -->
+  <main class="dashboard-container">
+    <!-- Left Sidebar: AI Nowcast Telemetry & Physics -->
+    <aside class="sidebar left-sidebar">
+      <!-- Live Plain-English Situation Summary Box -->
+      <div class="card situation-card" id="situationCard">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-bullhorn text-accent"></i> Live Situation Summary</h3>
+          <span class="live-dot-tag"><span class="status-dot pulsing"></span> Real-Time</span>
+        </div>
+        <div class="situation-body">
+          <p class="situation-summary-text" id="situationSummaryText">
+            Severe convective storm detected in the forecast area. High probability of cloud-to-ground lightning and torrential downpours over the next 30 to 60 minutes.
+          </p>
+          <div class="quick-chips">
+            <span class="quick-chip" id="chipHailRisk"><i class="fa-solid fa-snowflake"></i> Hail Risk: Elevated</span>
+            <span class="quick-chip" id="chipWindRisk"><i class="fa-solid fa-wind"></i> Gusts: 40-55 km/h</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Threat Matrix Card -->
+      <div class="card threat-card" id="threatCard">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-shield-halved"></i> AI Threat Assessment</h3>
+          <span class="lead-pill" id="currentLeadPill">+30 Min Lead</span>
+        </div>
+        
+        <div class="threat-display">
+          <div class="threat-gauge-wrapper">
+            <div class="gauge-circle" id="threatGaugeCircle">
+              <span class="gauge-value" id="tsProbabilityText">--%</span>
+              <span class="gauge-label">Storm Prob</span>
+            </div>
+          </div>
+          <div class="threat-breakdown">
+            <div class="threat-row">
+              <span class="lbl" title="AI Convective Thunderstorm Risk Category">Thunderstorm Risk</span>
+              <span class="badge badge-severe" id="tsRiskBadge">--</span>
+            </div>
+            <div class="threat-row">
+              <span class="lbl" title="AI Cloud-to-Ground & Intra-Cloud Lightning Severity">Lightning Threat</span>
+              <span class="badge badge-severe" id="ltgRiskBadge">--</span>
+            </div>
+            <div class="threat-row">
+              <span class="lbl" title="Maximum predicted radar reflectivity core">Expected Peak dBZ</span>
+              <span class="val font-mono" id="expectedDbzVal">-- dBZ</span>
+            </div>
+            <div class="threat-row">
+              <span class="lbl" title="Estimated flash count per minute">Flash Rate</span>
+              <span class="val font-mono" id="expectedFlashRateVal">-- f/min</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="storm-motion-bar">
+          <div class="motion-item">
+            <i class="fa-solid fa-compass" id="compassIcon"></i>
+            <div>
+              <span class="sub-lbl">Movement</span>
+              <strong id="stormHeadingVal">NE (48°)</strong>
+            </div>
+          </div>
+          <div class="motion-item">
+            <i class="fa-solid fa-gauge-high"></i>
+            <div>
+              <span class="sub-lbl">Cell Speed</span>
+              <strong id="stormSpeedVal">38 km/h</strong>
+            </div>
+          </div>
+          <div class="motion-item">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            <div>
+              <span class="sub-lbl">Trend</span>
+              <strong id="stormGrowthVal" class="text-warning">Intensifying</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schultz Lightning Jump & Precursor Card -->
+      <div class="card lightning-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-bolt"></i> Lightning &amp; Convective Jump</h3>
+          <span class="sub-tag" title="Schultz 2-sigma algorithm detects rapid lightning flash rate surges 15-30 min before severe microbursts & hail">Schultz 2σ Detection <i class="fa-regular fa-circle-question"></i></span>
+        </div>
+        <div class="lightning-stats-grid">
+          <div class="stat-box" id="jumpIndicatorBox">
+            <span class="stat-lbl">Lightning Jump</span>
+            <strong class="stat-val text-danger" id="jumpStatusText">JUMP (2.8σ)</strong>
+            <span class="stat-desc">Severe wind / hail precursor</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-lbl">15-Min Flash Count</span>
+            <strong class="stat-val font-mono" id="flashCountVal">57</strong>
+            <span class="stat-desc">32% Cloud-to-Ground (CG)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Atmospheric Sounding & Thermodynamic Diagnostics -->
+      <div class="card sounding-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-temperature-half"></i> Thermodynamic Diagnostics</h3>
+          <span class="sub-tag">WRF / In Situ</span>
+        </div>
+        <div class="sounding-grid">
+          <div class="sounding-item" title="Convective Available Potential Energy: Fuel for storm updrafts (>2000 J/kg is high)">
+            <span class="snd-lbl">CAPE (Updraft Energy) <i class="fa-regular fa-circle-question"></i></span>
+            <strong class="snd-val font-mono text-danger" id="capeVal">2550 J/kg</strong>
+          </div>
+          <div class="sounding-item" title="Convective Inhibition: Atmospheric cap preventing storm (<50 J/kg allows storms to break)">
+            <span class="snd-lbl">CIN (Cap Barrier) <i class="fa-regular fa-circle-question"></i></span>
+            <strong class="snd-val font-mono text-success" id="cinVal">35 J/kg</strong>
+          </div>
+          <div class="sounding-item" title="Lifted Index: Negative values indicate buoyant, rapidly rising storm updrafts">
+            <span class="snd-lbl">Lifted Index <i class="fa-regular fa-circle-question"></i></span>
+            <strong class="snd-val font-mono text-danger" id="liVal">-5.8 °C</strong>
+          </div>
+          <div class="sounding-item" title="K-Index: Measures moisture and stability. >35 indicates high thunderstorm likelihood">
+            <span class="snd-lbl">K-Index (TS Pot) <i class="fa-regular fa-circle-question"></i></span>
+            <strong class="snd-val font-mono text-warning" id="kIndexVal">36.5</strong>
+          </div>
+          <div class="sounding-item" title="Radar Echo Top: Maximum storm cloud altitude (km)">
+            <span class="snd-lbl">Echo Top (ET)</span>
+            <strong class="snd-val font-mono" id="echoTopVal">14.2 km</strong>
+          </div>
+          <div class="sounding-item" title="Vertically Integrated Liquid: Total mass of suspended rain/hail in cloud column">
+            <span class="snd-lbl">VIL Density</span>
+            <strong class="snd-val font-mono" id="vilVal">28.4 kg/m²</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Explainable AI (XAI) Feature Drivers -->
+      <div class="card xai-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-brain"></i> AI Decision Explanations</h3>
+          <span class="sub-tag" title="SHAP feature attribution explaining why the AI predicted this probability">XAI SHAP <i class="fa-regular fa-circle-question"></i></span>
+        </div>
+        <div class="xai-list" id="xaiDriversList">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Section: Interactive Geospatial GIS Map -->
+    <section class="map-section">
+      <div class="map-wrapper">
+        <!-- Floating Layer Control Toolbar -->
+        <div class="map-layer-toolbar">
+          <div class="toolbar-title"><i class="fa-solid fa-layer-group"></i> Multi-Sensor Layers</div>
+          <label class="layer-toggle-btn active" id="toggleRadarLayer" title="Toggle Doppler Weather Radar Reflectivity">
+            <input type="checkbox" checked id="chkRadar">
+            <span class="toggle-dot radar-dot"></span> Radar (DWR dBZ)
+          </label>
+          <label class="layer-toggle-btn active" id="toggleSatelliteLayer" title="Toggle INSAT-3D Infrared Cloud Top Temperature">
+            <input type="checkbox" checked id="chkSat">
+            <span class="toggle-dot sat-dot"></span> Satellite (INSAT CTT)
+          </label>
+          <label class="layer-toggle-btn active" id="toggleLightningLayer" title="Toggle Real-Time Cloud-to-Ground & Intra-Cloud Lightning Strikes">
+            <input type="checkbox" checked id="chkLtg">
+            <span class="toggle-dot ltg-dot"></span> Lightning Strikes
+          </label>
+          <label class="layer-toggle-btn active" id="toggleTrackLayer" title="Toggle Projected Storm Motion Trajectory & Uncertainty Cones">
+            <input type="checkbox" checked id="chkTrack">
+            <span class="toggle-dot track-dot"></span> Storm Vector &amp; Cone
+          </label>
+        </div>
+
+        <!-- The Leaflet GIS Map Container -->
+        <div id="gisMap" class="gis-map"></div>
+
+        <!-- Colormap Legends (IMD Radar + Satellite IR) -->
+        <div class="map-legends">
+          <div class="legend-box radar-legend">
+            <div class="legend-title">IMD Radar Reflectivity (dBZ)</div>
+            <div class="legend-gradient radar-bar"></div>
+            <div class="legend-labels">
+              <span>10 Light</span><span>25</span><span>35 Moderate</span><span>45 Heavy</span><span>55 Severe</span><span>65+ Hail</span>
+            </div>
+          </div>
+          <div class="legend-box sat-legend">
+            <div class="legend-title">INSAT-3D Cloud Top Temp (°C)</div>
+            <div class="legend-gradient sat-bar"></div>
+            <div class="legend-labels">
+              <span>20°</span><span>0°</span><span>-20°</span><span>-40°</span><span>-60° Cold Core</span><span>-80° Overshoot</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map Floating Cell Info Overlay -->
+        <div class="floating-cell-info" id="floatingCellInfo">
+          <div class="cell-info-header">
+            <strong id="cellInfoId">CELL-HYD-01</strong>
+            <span class="badge badge-severe" id="cellInfoSeverity">Severe Core</span>
+          </div>
+          <div class="cell-info-body">
+            <div><span>Max Reflectivity:</span> <strong id="cellInfoMaxDbz">65.6 dBZ</strong></div>
+            <div><span>Trajectory:</span> <strong id="cellInfoTraj">48° @ 38 km/h</strong></div>
+            <div><span>Area:</span> <strong id="cellInfoArea">420 km²</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spatiotemporal Timeline Playback Controls -->
+      <div class="timeline-bar">
+        <div class="timeline-playback-btn">
+          <button class="btn-icon" id="btnPlayPause" title="Play / Pause Time Series (Spacebar)">
+            <i class="fa-solid fa-play" id="playIcon"></i>
+          </button>
+          <button class="btn-icon" id="btnLiveMode" title="Jump to Live Scan (t0)">
+            <i class="fa-solid fa-satellite-dish"></i> LIVE
+          </button>
+        </div>
+
+        <div class="timeline-slider-container">
+          <div class="timeline-ticks" id="timelineTicks">
+            <!-- Timeline points: -60, -45, -30, -15, t0, +15, +30, +45, +60, +90 -->
+          </div>
+          <input type="range" id="timelineSlider" min="0" max="9" value="4" step="1" class="timeline-range" aria-label="Observation and forecast time slider">
+        </div>
+
+        <div class="timeline-current-label">
+          <span class="badge" id="timelineTypeBadge">Live Observation</span>
+          <strong id="timelineTimeDisplay">t0 (Live Scan)</strong>
+        </div>
+
+        <!-- Keyboard Shortcut Hint -->
+        <div class="keyboard-hints" title="Keyboard Shortcuts">
+          <span><kbd>Space</kbd> Play/Pause</span>
+          <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Leads</span>
+          <span><kbd>←</kbd><kbd>→</kbd> Scrub</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Sidebar: Detected Cells, Early Warnings, Multi-Sensor Feeds -->
+    <aside class="sidebar right-sidebar">
+      <!-- Active Convective Cells Tracking List -->
+      <div class="card cells-list-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-cloud-bolt"></i> Convective Cells (SCIT/TITAN)</h3>
+          <span class="cell-count" id="activeCellsCount">1 Cell Active</span>
+        </div>
+        <div class="cells-container" id="cellsContainer">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Active Early Warning Advisory Card -->
+      <div class="card alert-details-card" id="activeAlertCard">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-triangle-exclamation text-danger"></i> CAP Warning Advisory</h3>
+          <span class="badge badge-severe" id="capSeverityBadge">Extreme</span>
+        </div>
+        <div class="cap-content">
+          <h4 id="capAlertHeadline">Severe Thunderstorm &amp; Lightning Warning</h4>
+          <p class="cap-time-valid" id="capValidity">Valid: Next 60-90 minutes</p>
+          
+          <div class="cap-section">
+            <h5><i class="fa-solid fa-location-crosshairs"></i> High-Risk Impact Zones</h5>
+            <div class="zone-tags" id="capAffectedZones">
+              <!-- Zone badges -->
+            </div>
+          </div>
+
+          <div class="cap-section">
+            <h5><i class="fa-solid fa-triangle-exclamation"></i> Forecast Hazards</h5>
+            <ul class="hazard-list" id="capHazardsList">
+              <!-- Hazards -->
+            </ul>
+          </div>
+
+          <div class="cap-section">
+            <h5><i class="fa-solid fa-person-shelter"></i> Life-Safety Directives (NDMA)</h5>
+            <ul class="safety-list" id="capSafetyList">
+              <!-- Instructions -->
+            </ul>
+          </div>
+
+          <div class="cap-actions-grid">
+            <button class="btn btn-block btn-outline" id="btnSimulateBroadcast">
+              <i class="fa-solid fa-tower-broadcast"></i> Test Broadcast Simulation
+            </button>
+            <div class="cap-export-row">
+              <a href="/api/alerts/cap.xml" target="_blank" class="btn btn-sm btn-outline" id="btnDownloadCapXml" title="Download OASIS CAP-v1.2 Standard XML">
+                <i class="fa-solid fa-code"></i> CAP XML
+              </a>
+              <a href="/api/alerts/geojson" target="_blank" class="btn btn-sm btn-outline" id="btnDownloadGeoJson" title="Download GIS GeoJSON Polygons">
+                <i class="fa-solid fa-map-location-dot"></i> GeoJSON
+              </a>
+              <a href="/api/export-bulletin" target="_blank" class="btn btn-sm btn-outline" id="btnDownloadBulletin" title="Download Text Meteorological Bulletin">
+                <i class="fa-solid fa-file-lines"></i> Bulletin
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ================= Interactive User Guide & Quick Tour Modal ================= -->
+  <div class="modal-overlay hidden" id="guideModal">
+    <div class="modal-container large-modal">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-book-open-reader text-accent"></i> How to Use Aerocast-AI Nowcasting Platform</h2>
+        <button class="modal-close" id="btnCloseGuide"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-subtabs">
+          <button class="subtab-btn active" id="guideTab1Btn"><i class="fa-solid fa-compass"></i> 1. Getting Started</button>
+          <button class="subtab-btn" id="guideTab2Btn"><i class="fa-solid fa-layer-group"></i> 2. Reading Radar &amp; Maps</button>
+          <button class="subtab-btn" id="guideTab3Btn"><i class="fa-solid fa-bolt"></i> 3. Lightning &amp; AI Physics</button>
+          <button class="subtab-btn" id="guideTab4Btn"><i class="fa-solid fa-sliders"></i> 4. What-If Simulator</button>
+        </div>
+
+        <!-- Guide Tab 1: Getting Started -->
+        <div id="guideTab1Content" class="guide-tab-content">
+          <div class="guide-hero-banner">
+            <h3>Welcome to Aerocast-AI Nowcasting</h3>
+            <p>Aerocast-AI delivers automated 0–90 minute localized forecasts of severe convective storms, lightning strikes, and damaging winds across India using multi-sensor radar and satellite AI models.</p>
+          </div>
+          <div class="guide-steps-grid">
+            <div class="guide-step-card">
+              <div class="step-num">1</div>
+              <h4>Select a DWR Station</h4>
+              <p>Choose from 8 major Indian Doppler Weather Radar zones (Hyderabad, Kolkata, Delhi-NCR, Bhubaneswar, Mumbai, etc.) from the top dropdown.</p>
+            </div>
+            <div class="guide-step-card">
+              <div class="step-num">2</div>
+              <h4>Switch Lead Times</h4>
+              <p>Click <strong>+30m</strong>, <strong>+60m</strong>, or <strong>+90m</strong> in the top header to inspect forecast horizons and threat probabilities.</p>
+            </div>
+            <div class="guide-step-card">
+              <div class="step-num">3</div>
+              <h4>Scrub the Timeline</h4>
+              <p>Use the bottom slider or press <kbd>Space</kbd> to play animated storm cell advection from 1 hour in the past ($t-60\text{m}$) into the future ($+90\text{m}$).</p>
+            </div>
+            <div class="guide-step-card">
+              <div class="step-num">4</div>
+              <h4>Inspect Alerts &amp; Directives</h4>
+              <p>Review active CAP warnings in the right sidebar with official NDMA disaster safety advice for the public.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guide Tab 2: Radar & Maps -->
+        <div id="guideTab2Content" class="guide-tab-content hidden">
+          <h3 class="section-title">Understanding Map Colors &amp; Radar Reflectivity (dBZ)</h3>
+          <p class="modal-desc">Radar reflectivity measures the concentration and size of precipitation particles in the atmosphere:</p>
+          <div class="guide-legend-table">
+            <div class="guide-legend-row">
+              <span class="guide-color-box c-green"></span>
+              <strong>15 – 30 dBZ (Light to Moderate Rain)</strong>
+              <span>Stratiform rain or early developing shower. Minimal lightning risk.</span>
+            </div>
+            <div class="guide-legend-row">
+              <span class="guide-color-box c-yellow"></span>
+              <strong>35 – 45 dBZ (Heavy Convective Rain)</strong>
+              <span>Convective initiation. Updrafts carrying substantial moisture aloft.</span>
+            </div>
+            <div class="guide-legend-row">
+              <span class="guide-color-box c-red"></span>
+              <strong>50 – 58 dBZ (Severe Thunderstorm)</strong>
+              <span>Vigorous convective core, intense cloud-to-ground lightning, and gusty winds.</span>
+            </div>
+            <div class="guide-legend-row">
+              <span class="guide-color-box c-purple"></span>
+              <strong>60+ dBZ (Violent Hail / Severe Supercell)</strong>
+              <span>Extremely dangerous storm core with high probability of large hail and microbursts.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guide Tab 3: Lightning & Physics -->
+        <div id="guideTab3Content" class="guide-tab-content hidden">
+          <h3 class="section-title">Key Physical Indicators Explained</h3>
+          <div class="guide-glossary-grid">
+            <div class="glossary-item">
+              <h4>⚡ Schultz 2σ Lightning Jump</h4>
+              <p>A sudden exponential surge in total lightning flash rate ($\Delta F / \sigma \ge 2.0$) that precedes severe downbursts and hail by <strong>15 to 30 minutes</strong>.</p>
+            </div>
+            <div class="glossary-item">
+              <h4>🔥 CAPE (Updraft Energy)</h4>
+              <p>Convective Available Potential Energy ($J/kg$). High CAPE ($>2000$) provides the thermodynamic fuel needed for explosive thunderstorm updrafts.</p>
+            </div>
+            <div class="glossary-item">
+              <h4>🛡️ CIN (Convective Inhibition)</h4>
+              <p>The atmospheric "lid" or barrier. Low CIN ($<50\text{ J/kg}$) allows storms to trigger easily, while high CIN caps convection.</p>
+            </div>
+            <div class="glossary-item">
+              <h4>🛰️ Satellite Cloud Top Cooling</h4>
+              <p>INSAT-3D measures cloud-top infrared temperature. Fast cooling ($\le -5^\circ\text{C} / 15\text{min}$) indicates rapidly climbing updrafts penetrating the tropopause.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guide Tab 4: What-If Simulator -->
+        <div id="guideTab4Content" class="guide-tab-content hidden">
+          <h3 class="section-title">Using the "What-If" AI Sandbox Simulator</h3>
+          <p class="modal-desc">Test how the machine learning model reacts to custom weather scenarios in real-time:</p>
+          <div class="guide-sandbox-tips">
+            <div class="tip-card">
+              <i class="fa-solid fa-wand-magic-sparkles text-accent"></i>
+              <h4>1-Click Presets</h4>
+              <p>Click any of the preset buttons in the Sandbox (e.g. <em>Nor'wester Squall</em>, <em>Fair Weather</em>) to instantly load realistic meteorological profiles.</p>
+            </div>
+            <div class="tip-card">
+              <i class="fa-solid fa-sliders text-warning"></i>
+              <h4>Interactive Sliders</h4>
+              <p>Drag the sliders to test specific thresholds — e.g. increase CAPE to 3500 and lower CIN to 15 to trigger an instant severe prediction reaction.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Modal: What-If AI Sandbox -->
+  <div class="modal-overlay hidden" id="sandboxModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-sliders text-accent"></i> Interactive "What-If" AI Prediction Sandbox</h2>
+        <button class="modal-close" id="btnCloseSandbox"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Adjust atmospheric and radar parameters below to simulate storm triggers in real-time. The tuned XGBoost model will compute instant probabilities and risk scores.
+        </p>
+
+        <!-- 1-Click Scenario Presets Bar -->
+        <div class="sandbox-presets-bar">
+          <span class="presets-lbl"><i class="fa-solid fa-wand-magic-sparkles"></i> 1-Click Presets:</span>
+          <button class="btn btn-xs btn-preset" id="presetNorwester"><i class="fa-solid fa-bolt text-danger"></i> Nor'wester Squall</button>
+          <button class="btn btn-xs btn-preset" id="presetSevere"><i class="fa-solid fa-cloud-bolt text-warning"></i> Severe Supercell</button>
+          <button class="btn btn-xs btn-preset" id="presetModerate"><i class="fa-solid fa-cloud-rain text-accent"></i> Moderate Shower</button>
+          <button class="btn btn-xs btn-preset" id="presetFair"><i class="fa-solid fa-sun text-success"></i> Fair Weather</button>
+          <button class="btn btn-xs btn-outline" id="presetReset"><i class="fa-solid fa-arrow-rotate-left"></i> Reset to Live</button>
+        </div>
+
+        <div class="sandbox-grid">
+          <!-- Sliders -->
+          <div class="sandbox-inputs">
+            <div class="input-control">
+              <div class="input-lbl-row">
+                <label for="sliderMaxDbz">Radar Core Reflectivity (max_reflectivity_dbz)</label>
+                <span class="input-val font-mono" id="valMaxDbz">54 dBZ</span>
+              </div>
+              <input type="range" id="sliderMaxDbz" min="10" max="70" value="54" step="1">
+            </div>
+
+            <div class="input-control">
+              <div class="input-lbl-row">
+                <label for="sliderCape">CAPE Instability (cape_j_kg)</label>
+                <span class="input-val font-mono" id="valCape">2800 J/kg</span>
+              </div>
+              <input type="range" id="sliderCape" min="100" max="4500" value="2800" step="50">
+            </div>
+
+            <div class="input-control">
+              <div class="input-lbl-row">
+                <label for="sliderCin">Convective Inhibition (cin_j_kg)</label>
+                <span class="input-val font-mono" id="valCin">25 J/kg</span>
+              </div>
+              <input type="range" id="sliderCin" min="0" max="250" value="25" step="5">
+            </div>
+
+            <div class="input-control">
+              <div class="input-lbl-row">
+                <label for="sliderCtt">Cloud Top Temperature (cloud_top_temp_c)</label>
+                <span class="input-val font-mono" id="valCtt">-68 °C</span>
+              </div>
+              <input type="range" id="sliderCtt" min="-85" max="15" value="-68" step="1">
+            </div>
+
+            <div class="input-control">
+              <div class="input-lbl-row">
+                <label for="sliderCooling">Cloud Cooling Rate (cloud_cooling_rate_15min)</label>
+                <span class="input-val font-mono" id="valCooling">-8.0 °C/15m</span>
+              </div>
+              <input type="range" id="sliderCooling" min="-18" max="4" value="-8" step="0.5">
+            </div>
+
+            <div class="input-control">
+              <div class="input-lbl-row">
+                <label for="sliderFlashRate">Lightning Flash Rate (flash_rate_per_min)</label>
+                <span class="input-val font-mono" id="valFlashRate">22 f/min</span>
+              </div>
+              <input type="range" id="sliderFlashRate" min="0" max="90" value="22" step="1">
+            </div>
+
+            <div class="input-control">
+              <div class="input-lbl-row">
+                <label for="sliderJump">Lightning Jump (lightning_jump_sigma)</label>
+                <span class="input-val font-mono" id="valJump">2.6 σ</span>
+              </div>
+              <input type="range" id="sliderJump" min="0" max="5" value="2.6" step="0.1">
+            </div>
+          </div>
+
+          <!-- Real-Time Sandbox Output -->
+          <div class="sandbox-output">
+            <h3><i class="fa-solid fa-microchip"></i> Live AI Prediction Output</h3>
+            <div class="sandbox-results-card">
+              <div class="res-row">
+                <span>30-Min Thunderstorm Prob:</span>
+                <strong class="font-mono text-danger" id="res30mProb">--%</strong>
+              </div>
+              <div class="res-row">
+                <span>60-Min Thunderstorm Prob:</span>
+                <strong class="font-mono text-warning" id="res60mProb">--%</strong>
+              </div>
+              <div class="res-row">
+                <span>90-Min Thunderstorm Prob:</span>
+                <strong class="font-mono" id="res90mProb">--%</strong>
+              </div>
+              <div class="res-row">
+                <span>Lightning Threat Class:</span>
+                <span class="badge badge-severe" id="resLtgClass">--</span>
+              </div>
+              <div class="res-row">
+                <span>Storm Morphological Type:</span>
+                <strong id="resStormType">--</strong>
+              </div>
+            </div>
+
+            <div class="sandbox-drivers" id="sandboxDrivers">
+              <!-- Dynamic drivers -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Modal: Thermodynamic Skew-T Sounding Profile -->
+  <div class="modal-overlay hidden" id="soundingModal">
+    <div class="modal-container large-modal">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-chart-area text-accent"></i> Thermodynamic Skew-T Sounding Profile &amp; Convective Instability</h2>
+        <button class="modal-close" id="btnCloseSounding"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <!-- Sounding Instability Metrics Grid -->
+        <div class="metrics-summary-banner" id="soundingSummaryBanner">
+          <div class="metric-big-box">
+            <span class="m-val text-danger" id="sndCapeVal">-- J/kg</span>
+            <span class="m-lbl">SBCAPE Instability</span>
+          </div>
+          <div class="metric-big-box">
+            <span class="m-val text-success" id="sndCinVal">-- J/kg</span>
+            <span class="m-lbl">SBCIN Capping</span>
+          </div>
+          <div class="metric-big-box">
+            <span class="m-val text-danger" id="sndLiVal">-- °C</span>
+            <span class="m-lbl">Lifted Index (LI)</span>
+          </div>
+          <div class="metric-big-box">
+            <span class="m-val text-warning" id="sndKIndexVal">--</span>
+            <span class="m-lbl">K-Index (TS Potential)</span>
+          </div>
+          <div class="metric-big-box">
+            <span class="m-val" id="sndShearVal">-- m/s</span>
+            <span class="m-lbl">0-6 km Bulk Shear</span>
+          </div>
+          <div class="metric-big-box">
+            <span class="m-val" id="sndPwatVal">-- mm</span>
+            <span class="m-lbl">Precipitable Water</span>
+          </div>
+        </div>
+
+        <div class="sounding-content-layout">
+          <!-- Canvas Plot for Skew-T Diagram -->
+          <div class="skewt-canvas-wrapper">
+            <canvas id="skewTCanvas" width="620" height="520"></canvas>
+            <div class="skewt-legend">
+              <span class="sk-leg-item"><span class="sk-dot red-dot"></span> Environmental Temp (T)</span>
+              <span class="sk-leg-item"><span class="sk-dot green-dot"></span> Dewpoint (Td)</span>
+              <span class="sk-leg-item"><span class="sk-dot cyan-dot"></span> Parcel Ascent (CAPE)</span>
+              <span class="sk-leg-item"><span class="sk-dot purple-dot"></span> Hail Growth (-10°C to -30°C)</span>
+            </div>
+          </div>
+
+          <!-- Vertical Sounding Levels Table -->
+          <div class="sounding-table-wrapper">
+            <h3 class="section-title">Vertical Atmospheric Profile Levels</h3>
+            <table class="metrics-table sounding-table">
+              <thead>
+                <tr>
+                  <th>Pressure</th>
+                  <th>Height (MSL)</th>
+                  <th>Temp (T)</th>
+                  <th>Dewpoint (Td)</th>
+                  <th>Wind Speed</th>
+                  <th>Theta-E</th>
+                </tr>
+              </thead>
+              <tbody id="soundingTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Modal: Meteogram Time-Series Evolution -->
+  <div class="modal-overlay hidden" id="meteogramModal">
+    <div class="modal-container large-modal">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-chart-line text-accent"></i> Convective Evolution Meteogram (-60m to +90m)</h2>
+        <button class="modal-close" id="btnCloseMeteogram"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Multimodal time-series tracking physical radar core intensification, INSAT-3D cloud cooling rates, lightning flash frequency spikes, and AI forecast probabilities across the full observation and nowcast horizon.
+        </p>
+        <div class="meteogram-canvas-wrapper">
+          <canvas id="meteogramCanvas" width="880" height="420"></canvas>
+        </div>
+        <div class="meteogram-legend">
+          <span class="mg-leg-item"><span class="mg-dot orange-dot"></span> Radar Core dBZ</span>
+          <span class="mg-leg-item"><span class="mg-dot blue-dot"></span> Cloud Top Temp (°C)</span>
+          <span class="mg-leg-item"><span class="mg-dot yellow-dot"></span> Flash Rate (f/min)</span>
+          <span class="mg-leg-item"><span class="mg-dot red-dot"></span> 30m Storm Prob (%)</span>
+          <span class="mg-leg-item"><span class="mg-dot purple-dot"></span> 60m Storm Prob (%)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Modal: Model AI Verification Metrics & Stats -->
+  <div class="modal-overlay hidden" id="metricsModal">
+    <div class="modal-container large-modal">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-chart-line text-accent"></i> Model Verification &amp; Multi-Model AI Benchmarks</h2>
+        <button class="modal-close" id="btnCloseMetrics"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <!-- Sub-tabs: Operational Metrics vs Benchmark -->
+        <div class="modal-subtabs">
+          <button class="subtab-btn active" id="btnTabOperational">Operational Verification Matrix</button>
+          <button class="subtab-btn" id="btnTabBenchmark">Multi-Model AI Benchmark (XGBoost vs Optical Flow vs ConvLSTM)</button>
+        </div>
+
+        <!-- Tab 1: Operational Validation Metrics -->
+        <div id="tabContentOperational" class="subtab-content">
+          <div class="metrics-summary-banner">
+            <div class="metric-big-box">
+              <span class="m-val">0.8921</span>
+              <span class="m-lbl">Overall Multi-Lead ROC-AUC</span>
+            </div>
+            <div class="metric-big-box">
+              <span class="m-val">99.5%</span>
+              <span class="m-lbl">Lightning Risk Accuracy</span>
+            </div>
+            <div class="metric-big-box">
+              <span class="m-val">0.9226</span>
+              <span class="m-lbl">Peak Threat Score (CSI @ 60m)</span>
+            </div>
+            <div class="metric-big-box">
+              <span class="m-val">97.6%</span>
+              <span class="m-lbl">Probability of Detection (POD)</span>
+            </div>
+          </div>
+
+          <h3 class="section-title">Lead-Time Forecast Verification Matrix</h3>
+          <table class="metrics-table">
+            <thead>
+              <tr>
+                <th>Lead Horizon</th>
+                <th>ROC-AUC</th>
+                <th>Accuracy</th>
+                <th>Precision</th>
+                <th>POD (Recall)</th>
+                <th>CSI (Threat Score)</th>
+                <th>FAR (False Alarm)</th>
+                <th>TP / FP / FN / TN</th>
+              </tr>
+            </thead>
+            <tbody id="metricsTableBody">
+              <!-- Populated via API -->
+            </tbody>
+          </table>
+
+          <h3 class="section-title">Physics-Grounding &amp; Feature Importances (SHAP / Gain)</h3>
+          <div class="feature-importance-bars" id="featureImportanceBars">
+            <!-- Feature bars -->
+          </div>
+        </div>
+
+        <!-- Tab 2: Multi-Model Benchmark Comparison -->
+        <div id="tabContentBenchmark" class="subtab-content hidden">
+          <table class="metrics-table benchmark-table">
+            <thead>
+              <tr>
+                <th>Model Architecture</th>
+                <th>Type / Approach</th>
+                <th>30m ROC-AUC</th>
+                <th>30m CSI Threat</th>
+                <th>POD (Recall)</th>
+                <th>FAR (False Alarm)</th>
+                <th>Heidke (HSS)</th>
+                <th>Latency</th>
+              </tr>
+            </thead>
+            <tbody id="benchmarkTableBody">
+              <!-- Populated via API -->
+            </tbody>
+          </table>
+
+          <h3 class="section-title">Lead-Time CSI Degradation Curves (15m to 90m)</h3>
+          <div class="benchmark-curves-grid" id="benchmarkCurvesGrid">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Modal: Public Alert Broadcast Simulator -->
+  <div class="modal-overlay hidden" id="broadcastModal">
+    <div class="modal-container phone-modal">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-tower-broadcast text-danger"></i> CAP Emergency Broadcast Demo</h2>
+        <button class="modal-close" id="btnCloseBroadcast"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <div class="phone-header">
+              <span>NDMA / IMD Alert Service</span>
+              <span>LIVE</span>
+            </div>
+            <div class="emergency-alert-card">
+              <div class="alert-siren">
+                <i class="fa-solid fa-bell text-danger"></i>
+                <strong>SEVERE WEATHER EMERGENCY</strong>
+              </div>
+              <h4 id="mockupHeadline">RED ALERT: Thunderstorm &amp; Lightning Hazard</h4>
+              <p id="mockupBody">Dangerous lightning and gale winds approaching Hyderabad. Take shelter immediately inside sturdy buildings. Avoid open fields and trees.</p>
+              <div class="mockup-footer">
+                <span>Issued by Aerocast-AI Early Warning Engine</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Audio Alert Chime -->
+  <audio id="alertAudio" preload="none">
+    <source src="https://cdn.freesound.org/previews/250/250629_4486188-lq.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Custom JS Application -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
