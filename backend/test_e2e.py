@@ -77,10 +77,18 @@ def test_e2e():
     assert geojson["type"] == "FeatureCollection"
     print(f"[OK] GIS GeoJSON Alert Polygons Verified: {len(geojson['features'])} geospatial features")
 
-    bulletin = urllib.request.urlopen(f"{BASE_URL}/api/export-bulletin?region=hyderabad").read().decode("utf-8")
-    assert "AEROCAST-AI METEOROLOGICAL NOWCAST BULLETIN" in bulletin
-    print(f"[OK] Plaintext Meteorological Bulletin Verified")
+    # 6. Specific Area Search & OpenWeatherMap Ground Data
+    search_res = json.loads(urllib.request.urlopen(f"{BASE_URL}/api/search-locations?q=gachibowli").read())
+    assert len(search_res) >= 1
+    print(f"\n[OK] Area Search Verified: Found {len(search_res)} results for 'gachibowli' -> Top: {search_res[0]['name']}")
 
+    threat_res = json.loads(urllib.request.urlopen(f"{BASE_URL}/api/area-assessment?lat=17.4401&lon=78.3489&name=Gachibowli").read())
+    assert "threat_score_pct" in threat_res and "local_dbz" in threat_res
+    print(f"[OK] Pinpoint Threat Assessment Verified: Threat={threat_res['threat_level']} ({threat_res['threat_score_pct']}%), Local dBZ={threat_res['local_dbz']}")
+
+    tile_res = json.loads(urllib.request.urlopen(f"{BASE_URL}/api/weather-tile-url?layer=precipitation_new").read())
+    assert "tile_url" in tile_res and "openweathermap" in tile_res["tile_url"]
+    print(f"[OK] OpenWeatherMap Tile Endpoint Verified: {tile_res['tile_url']}")
 
     print("\n==================================================================")
     print("[SUCCESS] ALL END-TO-END PIPELINES VERIFIED & OPERATIONAL!")

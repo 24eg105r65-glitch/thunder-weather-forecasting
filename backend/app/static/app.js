@@ -13,18 +13,24 @@ const STATE = {
   map: null,
   layers: {
     radarCanvas: null,
+    owmTileLayer: null,
     lightningGroup: null,
     stormCellsGroup: null,
-    trajectoryGroup: null
+    trajectoryGroup: null,
+    searchedAreaGroup: null
   },
   layerVisibility: {
     radar: true,
     satellite: true,
     lightning: true,
-    tracking: true
+    tracking: true,
+    owmPrecip: true
   },
   currentNowcastData: null,
-  regionsData: []
+  regionsData: [],
+  searchedLocation: null,
+  searchedAssessment: null,
+  activeSuggestionIdx: -1
 };
 
 
@@ -46,6 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initMap();
   initTimelineUI();
   setupEventListeners();
+  initAreaSearch();
   await loadRegions();
   await fetchAndRenderData();
 });
@@ -66,10 +73,18 @@ function initMap() {
     subdomains: "abcd"
   }).addTo(STATE.map);
 
+  // OpenWeatherMap Precipitation Layer (Ground Observation overlay)
+  STATE.layers.owmTileLayer = L.tileLayer("https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=6fd95f47f4586bd267deccc0834fa5fa", {
+    maxZoom: 18,
+    opacity: 0.65,
+    zIndex: 2
+  }).addTo(STATE.map);
+
   // Initialize Layer Groups
   STATE.layers.lightningGroup = L.layerGroup().addTo(STATE.map);
   STATE.layers.stormCellsGroup = L.layerGroup().addTo(STATE.map);
   STATE.layers.trajectoryGroup = L.layerGroup().addTo(STATE.map);
+  STATE.layers.searchedAreaGroup = L.layerGroup().addTo(STATE.map);
 }
 
 /* ================= 2. Data Fetching & Sync ================= */
@@ -103,6 +118,17 @@ async function fetchAndRenderData() {
     renderActiveCellsList(nowcast.active_cells);
     renderAlerts(nowcast.active_alerts);
     updateTimelineDisplay();
+
+    // Synchronize searched area assessment with the new timeline step if active
+    if (STATE.searchedLocation) {
+      await fetchAndRenderSearchedAreaThreat(
+        STATE.searchedLocation.lat,
+        STATE.searchedLocation.lon,
+        STATE.searchedLocation.name,
+        STATE.searchedLocation.category,
+        false
+      );
+    }
   } catch (err) {
     console.error("Error fetching nowcast data:", err);
   }
@@ -194,11 +220,11 @@ function updateSituationSummary(nowcast, pred) {
 
   let text = "";
   if (prob >= 0.75) {
-    text = `🚨 <strong>Severe Convection Alert:</strong> High probability (${Math.round(prob * 100)}%) of intense storm activity approaching ${regionName}. Heavy lightning (${nowcast.observation.flash_count_15min} strikes) and severe rain core (${dbz.toFixed(0)} dBZ) active.`;
+    text = `<i class="fa-solid fa-triangle-exclamation text-danger"></i> <strong>Severe Convection Alert:</strong> High probability (${Math.round(prob * 100)}%) of intense storm activity approaching ${regionName}. Heavy lightning (${nowcast.observation.flash_count_15min} strikes) and severe rain core (${dbz.toFixed(0)} dBZ) active.`;
   } else if (prob >= 0.40) {
-    text = `⚠️ <strong>Developing Storm:</strong> Moderate convective cells (${Math.round(prob * 100)}% probability) tracking ${pred.storm_direction_cardinal} at ${pred.storm_speed_kmh} km/h. Localized rain and lightning likely within ${pred.lead_time_minutes} min.`;
+    text = `<i class="fa-solid fa-cloud-bolt text-warning"></i> <strong>Developing Storm:</strong> Moderate convective cells (${Math.round(prob * 100)}% probability) tracking ${pred.storm_direction_cardinal} at ${pred.storm_speed_kmh} km/h. Localized rain and lightning likely within ${pred.lead_time_minutes} min.`;
   } else {
-    text = `🟢 <strong>Stable Atmospheric Conditions:</strong> Low storm probability (${Math.round(prob * 100)}%) across ${regionName}. No severe microbursts or squalls detected.`;
+    text = `<i class="fa-solid fa-circle-check text-success"></i> <strong>Stable Atmospheric Conditions:</strong> Low storm probability (${Math.round(prob * 100)}%) across ${regionName}. No severe microbursts or squalls detected.`;
   }
 
   if (isJump) {
@@ -297,7 +323,7 @@ function renderMapOverlays(radarData, nowcast) {
 
       marker.bindPopup(`
         <div style="font-size:11px;">
-          <strong>⚡ Lightning Strike (${strike.strike_type})</strong><br>
+          <strong><i class="fa-solid fa-bolt text-warning"></i> Lightning Strike (${strike.strike_type})</strong><br>
           Peak Current: <b>${strike.peak_current_ka} kA (${strike.polarity})</b><br>
           Age: <b>${strike.age_seconds}s ago</b>
         </div>
@@ -605,6 +631,16 @@ function setupEventListeners() {
     if (!e.target.checked) STATE.layers.trajectoryGroup.clearLayers();
     else fetchAndRenderData();
   });
+  document.getElementById("chkOwmPrecip")?.addEventListener("change", (e) => {
+    STATE.layerVisibility.owmPrecip = e.target.checked;
+    if (STATE.layers.owmTileLayer) {
+      if (e.target.checked) {
+        STATE.map.addLayer(STATE.layers.owmTileLayer);
+      } else {
+        STATE.map.removeLayer(STATE.layers.owmTileLayer);
+      }
+    }
+  });
 
   // User Guide Modal
   const btnOpenGuide = document.getElementById("btnOpenGuide");
@@ -706,6 +742,33 @@ function setupEventListeners() {
   document.getElementById("btnCloseBroadcast").addEventListener("click", () => {
     document.getElementById("broadcastModal").classList.add("hidden");
   });
+
+  // Privacy Policy Modal
+  const btnOpenPrivacy = document.getElementById("btnOpenPrivacy");
+  if (btnOpenPrivacy) {
+    btnOpenPrivacy.addEventListener("click", () => {
+      document.getElementById("privacyModal")?.classList.remove("hidden");
+    });
+  }
+  const linkFooterPrivacy = document.getElementById("linkFooterPrivacy");
+  if (linkFooterPrivacy) {
+    linkFooterPrivacy.addEventListener("click", (e) => {
+      e.preventDefault();
+      document.getElementById("privacyModal")?.classList.remove("hidden");
+    });
+  }
+  const btnClosePrivacy = document.getElementById("btnClosePrivacy");
+  if (btnClosePrivacy) {
+    btnClosePrivacy.addEventListener("click", () => {
+      document.getElementById("privacyModal")?.classList.add("hidden");
+    });
+  }
+  const btnDismissPrivacy = document.getElementById("btnDismissPrivacy");
+  if (btnDismissPrivacy) {
+    btnDismissPrivacy.addEventListener("click", () => {
+      document.getElementById("privacyModal")?.classList.add("hidden");
+    });
+  }
 
   // Close modals on overlay click
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
@@ -1104,13 +1167,13 @@ function renderSkewTChart(data) {
   // 3. Hail Growth Zone (-10°C to -30°C band)
   const yHmin = getY(700);
   const yHmax = getY(350);
-  ctx.fillStyle = "rgba(168, 85, 247, 0.12)";
+  ctx.fillStyle = "rgba(56, 189, 248, 0.08)";
   ctx.fillRect(padLeft, yHmax, plotW, yHmin - yHmax);
-  ctx.strokeStyle = "rgba(168, 85, 247, 0.4)";
+  ctx.strokeStyle = "rgba(56, 189, 248, 0.35)";
   ctx.setLineDash([4, 4]);
   ctx.strokeRect(padLeft, yHmax, plotW, yHmin - yHmax);
   ctx.setLineDash([]);
-  ctx.fillStyle = "rgba(168, 85, 247, 0.8)";
+  ctx.fillStyle = "rgba(56, 189, 248, 0.85)";
   ctx.font = "10px Outfit";
   ctx.textAlign = "left";
   ctx.fillText("HAIL GROWTH ZONE (-10°C to -30°C)", padLeft + 10, yHmax + 16);
@@ -1326,10 +1389,584 @@ function renderMeteogramChart(data) {
   // Curve 2: 30m Storm Probability % (Red)
   drawSeries(p => p.thunderstorm_prob_30m, "#ef4444", 2.5);
 
-  // Curve 3: 60m Storm Probability % (Purple)
-  drawSeries(p => p.thunderstorm_prob_60m, "#a855f7", 2);
+  // Curve 3: 60m Storm Probability % (Cyan)
+  drawSeries(p => p.thunderstorm_prob_60m, "#06b6d4", 2);
 
   // Curve 4: Flash Rate normalized to 0-100 (Yellow)
   drawSeries(p => Math.min(100, p.flash_rate_per_min * 1.5), "#eab308", 1.8);
 }
+
+
+/* ================= 13. Specific Area Search & Pinpoint Assessment ================= */
+let searchDebounceTimer = null;
+let currentSuggestions = [];
+
+function initAreaSearch() {
+  const searchInput = document.getElementById("areaSearchInput");
+  const clearBtn = document.getElementById("btnClearSearch");
+  const dropdown = document.getElementById("searchSuggestionsDropdown");
+  const listEl = document.getElementById("suggestionsList");
+
+  if (!searchInput) return;
+
+  // Global Keyboard Shortcuts (Ctrl+K, Cmd+K, or /)
+  window.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    } else if (e.key === "/" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA" && e.target.tagName !== "SELECT") {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+  });
+
+  // Input typing with debounce
+  searchInput.addEventListener("input", (e) => {
+    const val = e.target.value.trim();
+    if (val.length > 0) {
+      clearBtn.classList.remove("hidden");
+    } else {
+      clearBtn.classList.add("hidden");
+    }
+
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(async () => {
+      await performAreaSearch(val);
+    }, 220);
+  });
+
+  // Focus & Click
+  searchInput.addEventListener("focus", async () => {
+    const val = searchInput.value.trim();
+    await performAreaSearch(val);
+  });
+
+  // Clear button
+  clearBtn?.addEventListener("click", () => {
+    searchInput.value = "";
+    clearBtn.classList.add("hidden");
+    dropdown.classList.add("hidden");
+    clearSearchedArea();
+    searchInput.focus();
+  });
+
+  // Keyboard navigation inside search
+  searchInput.addEventListener("keydown", (e) => {
+    if (dropdown.classList.contains("hidden")) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      STATE.activeSuggestionIdx = Math.min(STATE.activeSuggestionIdx + 1, currentSuggestions.length - 1);
+      updateActiveSuggestionHighlight();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      STATE.activeSuggestionIdx = Math.max(STATE.activeSuggestionIdx - 1, -1);
+      updateActiveSuggestionHighlight();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (STATE.activeSuggestionIdx >= 0 && STATE.activeSuggestionIdx < currentSuggestions.length) {
+        selectSearchedArea(currentSuggestions[STATE.activeSuggestionIdx]);
+      } else if (currentSuggestions.length > 0) {
+        selectSearchedArea(currentSuggestions[0]);
+      } else if (searchInput.value.trim().length >= 3) {
+        geocodeFallback(searchInput.value.trim());
+      }
+    } else if (e.key === "Escape") {
+      dropdown.classList.add("hidden");
+      searchInput.blur();
+    }
+  });
+
+  // Close dropdown on click outside
+  document.addEventListener("click", (e) => {
+    const container = document.getElementById("areaSearchContainer");
+    if (container && !container.contains(e.target)) {
+      dropdown.classList.add("hidden");
+    }
+  });
+
+  // Disable click propagation to map on Searched Area Card
+  const areaCardEl = document.getElementById("searchedAreaCard");
+  if (areaCardEl && typeof L !== "undefined" && L.DomEvent) {
+    L.DomEvent.disableClickPropagation(areaCardEl);
+    L.DomEvent.disableScrollPropagation(areaCardEl);
+  }
+
+  // Searched Area Card Buttons
+  document.getElementById("btnCloseSearchedArea")?.addEventListener("click", (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const card = document.getElementById("searchedAreaCard");
+    if (card) {
+      card.classList.add("hidden");
+      card.style.display = "none";
+    }
+  });
+
+  document.getElementById("btnRecenterSearchedArea")?.addEventListener("click", () => {
+    if (STATE.searchedLocation) {
+      STATE.map.flyTo([STATE.searchedLocation.lat, STATE.searchedLocation.lon], 12, { duration: 1 });
+    }
+  });
+
+  document.getElementById("btnSwitchToNearestRadar")?.addEventListener("click", async () => {
+    if (STATE.searchedAssessment && STATE.searchedAssessment.nearest_region_id) {
+      const regId = STATE.searchedAssessment.nearest_region_id;
+      if (regId !== STATE.currentRegion) {
+        STATE.currentRegion = regId;
+        const sel = document.getElementById("regionSelector");
+        if (sel) sel.value = regId;
+        showToast(`Switched radar overlay to ${STATE.searchedAssessment.nearest_radar_station}`, "info");
+        await fetchAndRenderData();
+        if (STATE.searchedLocation) {
+          STATE.map.flyTo([STATE.searchedLocation.lat, STATE.searchedLocation.lon], 12, { duration: 1 });
+        }
+      } else {
+        showToast(`Already displaying ${STATE.searchedAssessment.nearest_radar_station}`, "info");
+      }
+    }
+  });
+
+  document.getElementById("btnClearAreaPin")?.addEventListener("click", () => {
+    clearSearchedArea();
+    showToast("Cleared searched area pin", "info");
+  });
+
+  // Map Click to Search / Pinpoint
+  STATE.map.on("click", async (e) => {
+    const lat = e.latlng.lat;
+    const lon = e.latlng.lng;
+    const name = `Coordinates (${lat.toFixed(4)}°, ${lon.toFixed(4)}°)`;
+    const locObj = {
+      name: name,
+      lat: lat,
+      lon: lon,
+      category: "coordinate",
+      state: "Pinned on Map"
+    };
+    await selectSearchedArea(locObj);
+  });
+}
+
+async function performAreaSearch(query) {
+  const dropdown = document.getElementById("searchSuggestionsDropdown");
+  const listEl = document.getElementById("suggestionsList");
+  const countEl = document.getElementById("suggestionsCount");
+  
+  if (!query || query.length === 0) {
+    // Show top radar zones & popular tech hubs as presets
+    const presets = [
+      { name: "Gachibowli, Hyderabad", lat: 17.4401, lon: 78.3489, category: "locality", state: "Telangana", nearest_region_id: "hyderabad", nearest_radar_station: "DWR Begumpet", distance_to_radar_km: 14.2 },
+      { name: "Salt Lake (Bidhannagar / Sector V), Kolkata", lat: 22.5804, lon: 88.4287, category: "locality", state: "West Bengal", nearest_region_id: "kolkata", nearest_radar_station: "DWR Kolkata", distance_to_radar_km: 11.5 },
+      { name: "Connaught Place (Central Delhi)", lat: 28.6315, lon: 77.2167, category: "landmark", state: "Delhi", nearest_region_id: "delhi", nearest_radar_station: "DWR Mausam Bhawan", distance_to_radar_km: 4.8 },
+      { name: "Whitefield (ITPB), Bengaluru", lat: 12.9698, lon: 77.7500, category: "locality", state: "Karnataka", nearest_region_id: "bengaluru", nearest_radar_station: "DWR Bengaluru", distance_to_radar_km: 18.6 },
+      { name: "Bandra-Kurla Complex (BKC), Mumbai", lat: 19.0657, lon: 72.8687, category: "locality", state: "Maharashtra", nearest_region_id: "mumbai", nearest_radar_station: "DWR Veravali", distance_to_radar_km: 7.2 },
+      { name: "Patia & Infocity, Bhubaneswar", lat: 20.3541, lon: 85.8193, category: "locality", state: "Odisha", nearest_region_id: "bhubaneswar", nearest_radar_station: "DWR Paradip", distance_to_radar_km: 82.0 },
+      { name: "OMR IT Corridor (Sholinganallur), Chennai", lat: 12.9010, lon: 80.2279, category: "locality", state: "Tamil Nadu", nearest_region_id: "chennai", nearest_radar_station: "DWR Sriharikota", distance_to_radar_km: 91.0 }
+    ];
+    currentSuggestions = presets;
+    renderSuggestionsList(presets, "Popular Convective & Radar Hotspots");
+    dropdown.classList.remove("hidden");
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/search-locations?q=${encodeURIComponent(query)}&limit=8`);
+    let results = await res.json();
+
+    // If local results are empty and user typed 3+ chars, try OpenStreetMap Nominatim geocoding
+    if ((!results || results.length === 0) && query.length >= 3) {
+      try {
+        const nomRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', India')}&limit=4`, {
+          headers: { "Accept-Language": "en" }
+        });
+        if (nomRes.ok) {
+          const nomData = await nomRes.json();
+          nomData.forEach(item => {
+            results.push({
+              name: item.display_name.split(",").slice(0, 3).join(","),
+              lat: parseFloat(item.lat),
+              lon: parseFloat(item.lon),
+              category: item.type === "city" ? "city" : "locality",
+              state: "India",
+              nearest_region_id: STATE.currentRegion,
+              nearest_radar_station: "Indian Radar Network",
+              distance_to_radar_km: 0
+            });
+          });
+        }
+      } catch (nomErr) {
+        console.warn("Nominatim fallback geocode error:", nomErr);
+      }
+    }
+
+    currentSuggestions = results;
+    STATE.activeSuggestionIdx = -1;
+
+    if (results.length > 0) {
+      renderSuggestionsList(results, `Found ${results.length} Locations`);
+      dropdown.classList.remove("hidden");
+    } else {
+      listEl.innerHTML = `
+        <div style="padding:16px; text-align:center; color:var(--text-muted); font-size:11.5px;">
+          <i class="fa-solid fa-map-location-dot" style="font-size:22px; color:rgba(255,255,255,0.2); margin-bottom:8px; display:block;"></i>
+          No matching area found for "<strong>${query}</strong>".<br>
+          <span style="font-size:10px; color:var(--text-secondary);">Try searching a city, locality, district or GPS coordinates (e.g. 17.44, 78.34).</span>
+        </div>
+      `;
+      if (countEl) countEl.innerText = "0 found";
+      dropdown.classList.remove("hidden");
+    }
+  } catch (err) {
+    console.error("Search error:", err);
+  }
+}
+
+async function geocodeFallback(query) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const item = data[0];
+        const loc = {
+          name: item.display_name.split(",").slice(0, 3).join(","),
+          lat: parseFloat(item.lat),
+          lon: parseFloat(item.lon),
+          category: "locality",
+          state: "Searched Location"
+        };
+        await selectSearchedArea(loc);
+      } else {
+        showToast(`Could not find coordinates for "${query}"`, "warning");
+      }
+    }
+  } catch (err) {
+    showToast(`Search lookup failed for "${query}"`, "danger");
+  }
+}
+
+function renderSuggestionsList(items, headerText) {
+  const listEl = document.getElementById("suggestionsList");
+  const countEl = document.getElementById("suggestionsCount");
+  if (countEl) countEl.innerText = `${items.length} found`;
+  listEl.innerHTML = "";
+
+  items.forEach((loc, idx) => {
+    const itemEl = document.createElement("div");
+    itemEl.className = "suggestion-item";
+    itemEl.dataset.idx = idx;
+
+    let iconClass = "fa-location-dot";
+    let catClass = loc.category || "locality";
+    if (loc.category === "radar_station") iconClass = "fa-tower-broadcast";
+    else if (loc.category === "airport") iconClass = "fa-plane-departure";
+    else if (loc.category === "city") iconClass = "fa-city";
+    else if (loc.category === "landmark") iconClass = "fa-monument";
+    else if (loc.category === "coordinate") iconClass = "fa-crosshairs";
+
+    itemEl.innerHTML = `
+      <div class="suggestion-left">
+        <div class="suggestion-icon ${catClass}">
+          <i class="fa-solid ${iconClass}"></i>
+        </div>
+        <div class="suggestion-info">
+          <span class="suggestion-name">${loc.name}</span>
+          <span class="suggestion-sub">
+            <span>${loc.state || (loc.category ? loc.category.toUpperCase() : "India")}</span>
+            <span>•</span>
+            <span class="font-mono">${loc.lat.toFixed(2)}°, ${loc.lon.toFixed(2)}°</span>
+          </span>
+        </div>
+      </div>
+      <div class="suggestion-right">
+        <span class="radar-dist-tag" title="Nearest Radar: ${loc.nearest_radar_station || 'IMD DWR'}">
+          ${loc.distance_to_radar_km ? loc.distance_to_radar_km + ' km DWR' : (loc.nearest_region_id || '').toUpperCase()}
+        </span>
+      </div>
+    `;
+
+    itemEl.addEventListener("click", () => {
+      selectSearchedArea(loc);
+    });
+
+    listEl.appendChild(itemEl);
+  });
+}
+
+function updateActiveSuggestionHighlight() {
+  const items = document.querySelectorAll(".suggestion-item");
+  items.forEach((el, idx) => {
+    if (idx === STATE.activeSuggestionIdx) {
+      el.classList.add("active");
+      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    } else {
+      el.classList.remove("active");
+    }
+  });
+}
+
+async function selectSearchedArea(loc) {
+  STATE.searchedLocation = loc;
+  
+  const searchInput = document.getElementById("areaSearchInput");
+  const clearBtn = document.getElementById("btnClearSearch");
+  const dropdown = document.getElementById("searchSuggestionsDropdown");
+
+  if (searchInput) searchInput.value = loc.name;
+  if (clearBtn) clearBtn.classList.remove("hidden");
+  if (dropdown) dropdown.classList.add("hidden");
+
+  // Fly Map to area
+  STATE.map.flyTo([loc.lat, loc.lon], 12, { duration: 1.2 });
+
+  showToast(`Located ${loc.name}`, "info");
+
+  // Fetch threat assessment & render overlays
+  await fetchAndRenderSearchedAreaThreat(loc.lat, loc.lon, loc.name, loc.category, true);
+}
+
+async function fetchAndRenderSearchedAreaThreat(lat, lon, name, category = "locality", autoSwitchRegion = true) {
+  const step = TIMELINE_STEPS[STATE.timeOffsetIdx];
+  const offset = step.offset_min;
+
+  try {
+    const res = await fetch(`/api/area-assessment?lat=${lat}&lon=${lon}&time_offset=${offset}&name=${encodeURIComponent(name || '')}`);
+    if (!res.ok) throw new Error("Area assessment failed");
+    const data = await res.json();
+    STATE.searchedAssessment = data;
+
+    // Sync resolved name if available
+    if (data.location_name) {
+      if (STATE.searchedLocation) STATE.searchedLocation.name = data.location_name;
+      const sInput = document.getElementById("areaSearchInput");
+      if (sInput && (!sInput.value || sInput.value.startsWith("Coordinates ("))) {
+        sInput.value = data.location_name;
+      }
+    }
+
+    // Render Pin & Proximity Circle on Map
+    renderSearchedAreaPin(data, category);
+
+    // Render Floating Searched Area Card
+    renderSearchedAreaCard(data, category);
+
+    // If searched location belongs to another radar region and autoSwitchRegion is true, notify user
+    if (autoSwitchRegion && data.nearest_region_id && data.nearest_region_id !== STATE.currentRegion) {
+      const currentRegObj = STATE.regionsData.find(r => r.id === STATE.currentRegion);
+      if (currentRegObj) {
+        const dCurrent = haversineDistance(lat, lon, currentRegObj.center[0], currentRegObj.center[1]);
+        if (dCurrent > 150) {
+          STATE.currentRegion = data.nearest_region_id;
+          const regSelect = document.getElementById("regionSelector");
+          if (regSelect) regSelect.value = data.nearest_region_id;
+          showToast(`Synced radar overlay with ${data.nearest_radar_station}`, "info");
+          await fetchAndRenderData();
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error fetching area assessment:", err);
+  }
+}
+
+function renderSearchedAreaPin(data, category) {
+  if (!STATE.layers.searchedAreaGroup) {
+    STATE.layers.searchedAreaGroup = L.layerGroup().addTo(STATE.map);
+  }
+  STATE.layers.searchedAreaGroup.clearLayers();
+
+  const lat = data.query_lat;
+  const lon = data.query_lon;
+
+  // Custom HTML DivIcon with pulsing beacon
+  const pinIcon = L.divIcon({
+    className: "search-pin-divicon",
+    html: `
+      <div class="search-pin-wrapper">
+        <div class="search-radar-beacon"></div>
+        <div class="search-pin-center"></div>
+      </div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+  });
+
+  const marker = L.marker([lat, lon], { icon: pinIcon, zIndexOffset: 1000 });
+
+  marker.bindTooltip(`
+    <div style="font-size:11px; font-weight:700;">
+      <i class="fa-solid fa-location-dot text-cyan"></i> <b>${data.location_name}</b><br>
+      <span class="badge badge-${data.threat_level.toLowerCase()}">${data.threat_level} Threat (${data.threat_score_pct}%)</span><br>
+      Local: <b>${data.local_dbz} dBZ</b> | Rain: <b>${data.estimated_rain_rate_mmh} mm/h</b>
+    </div>
+  `, { permanent: false, direction: "top", offset: [0, -12] });
+
+  marker.on("click", () => {
+    document.getElementById("searchedAreaCard").classList.remove("hidden");
+    renderSearchedAreaCard(data, category);
+  });
+
+  STATE.layers.searchedAreaGroup.addLayer(marker);
+
+  // Proximity 10 km Warning Radius Ring
+  const proximityCircle = L.circle([lat, lon], {
+    radius: 10000, // 10 km
+    color: data.threat_level === "Severe" ? "#ef4444" : data.threat_level === "High" ? "#f59e0b" : "#06b6d4",
+    fillColor: data.threat_level === "Severe" ? "#ef4444" : data.threat_level === "High" ? "#f59e0b" : "#06b6d4",
+    fillOpacity: 0.08,
+    weight: 1.5,
+    dashArray: "4, 6"
+  });
+  proximityCircle.bindTooltip("10 km Area Monitoring Radius", { sticky: true });
+  STATE.layers.searchedAreaGroup.addLayer(proximityCircle);
+
+  // If a storm cell is active, draw a vector line from cell to searched location
+  if (data.nearest_cell_id && STATE.currentNowcastData && STATE.currentNowcastData.active_cells) {
+    const cell = STATE.currentNowcastData.active_cells.find(c => c.cell_id === data.nearest_cell_id);
+    if (cell && data.distance_to_nearest_cell_km !== null) {
+      const vectorLine = L.polyline([[lat, lon], [cell.centroid_lat, cell.centroid_lon]], {
+        color: "#f59e0b",
+        weight: 2,
+        dashArray: "3, 5",
+        opacity: 0.85
+      });
+      vectorLine.bindTooltip(`Distance to ${cell.cell_id}: <b>${data.distance_to_nearest_cell_km} km</b>`, { sticky: true });
+      STATE.layers.searchedAreaGroup.addLayer(vectorLine);
+    }
+  }
+}
+
+function renderSearchedAreaCard(data, category) {
+  const card = document.getElementById("searchedAreaCard");
+  if (!card) return;
+
+  card.classList.remove("hidden");
+  card.style.display = "block";
+
+  // Title & Coordinates
+  document.getElementById("searchedAreaTitle").innerText = data.location_name || `Location (${data.query_lat.toFixed(4)}°, ${data.query_lon.toFixed(4)}°)`;
+  document.getElementById("searchedAreaCategory").innerText = category || "Locality";
+  document.getElementById("searchedAreaCoords").innerText = `${data.query_lat.toFixed(4)}° N, ${data.query_lon.toFixed(4)}° E`;
+
+  // Threat badge & score
+  const badge = document.getElementById("searchedAreaThreatBadge");
+  badge.innerText = `${data.threat_level} Threat`;
+  badge.className = `badge badge-${data.threat_level.toLowerCase()}`;
+
+  document.getElementById("searchedThreatScore").innerText = `${data.threat_score_pct}%`;
+  
+  // Threat banner text
+  const headlineEl = document.getElementById("searchedThreatHeadline");
+  if (data.threat_level === "Severe") {
+    headlineEl.innerText = "High-Impact Severe Convective Core";
+    headlineEl.className = "text-danger";
+  } else if (data.threat_level === "High") {
+    headlineEl.innerText = "Elevated Convection & Lightning Threat";
+    headlineEl.className = "text-warning";
+  } else if (data.threat_level === "Moderate") {
+    headlineEl.innerText = "Developing Showers in Vicinity";
+    headlineEl.className = "text-accent";
+  } else {
+    headlineEl.innerText = "Atmospherically Stable / Low Risk";
+    headlineEl.className = "text-success";
+  }
+
+  document.getElementById("searchedRadarContext").innerText = `Covered by ${data.nearest_radar_station} (${data.distance_to_radar_km} km)`;
+
+  // OpenWeatherMap Live In-Situ Observations
+  const owmBox = document.getElementById("owmLiveBox");
+  if (data.live_weather) {
+    if (owmBox) owmBox.classList.remove("hidden");
+    const lw = data.live_weather;
+    const tempVal = typeof lw.temperature_c === "number" ? lw.temperature_c : (typeof lw.temp_c === "number" ? lw.temp_c : 28.0);
+    const feelsVal = typeof lw.feels_like_c === "number" ? lw.feels_like_c : tempVal;
+    
+    const tempEl = document.getElementById("owmTemp");
+    if (tempEl) tempEl.innerText = `${tempVal.toFixed(1)} °C (feels ${feelsVal.toFixed(1)}°)`;
+    
+    const condEl = document.getElementById("owmCondition");
+    if (condEl) condEl.innerText = lw.condition || lw.description || lw.condition_main || "Current Weather";
+    
+    const humEl = document.getElementById("owmHumidity");
+    if (humEl) humEl.innerText = `${lw.humidity_pct ?? 60}%`;
+    
+    const windEl = document.getElementById("owmWind");
+    const windKmh = typeof lw.wind_speed_kmh === "number" ? lw.wind_speed_kmh : (typeof lw.wind_speed_mps === "number" ? lw.wind_speed_mps * 3.6 : 10.0);
+    const windDeg = lw.wind_deg ?? 0;
+    if (windEl) windEl.innerText = `${windKmh.toFixed(1)} km/h (${windDeg}°)`;
+    
+    const presEl = document.getElementById("owmPressure");
+    if (presEl) presEl.innerText = `${lw.pressure_hpa ?? 1010} hPa`;
+    
+    const iconEl = document.getElementById("owmWeatherIcon");
+    if (iconEl) {
+      if (lw.icon_url) {
+        iconEl.src = lw.icon_url;
+      } else if (lw.icon_code) {
+        iconEl.src = `https://openweathermap.org/img/wn/${lw.icon_code}@2x.png`;
+      }
+    }
+  } else if (owmBox) {
+    owmBox.classList.add("hidden");
+  }
+
+  // Meteorological metrics
+  document.getElementById("searchedLocalDbz").innerText = `${data.local_dbz} dBZ`;
+  document.getElementById("searchedRainRate").innerText = `${data.estimated_rain_rate_mmh} mm/h rain`;
+
+  const cellEl = document.getElementById("searchedNearestCell");
+  const etaEl = document.getElementById("searchedCellEta");
+  if (data.distance_to_nearest_cell_km !== null && data.distance_to_nearest_cell_km <= 60.0) {
+    cellEl.innerText = `${data.distance_to_nearest_cell_km} km`;
+    if (data.nearest_cell_approaching && data.estimated_cell_eta_minutes) {
+      etaEl.innerHTML = `<i class="fa-solid fa-arrow-trend-up text-danger"></i> Approaching (ETA ~${data.estimated_cell_eta_minutes}m)`;
+    } else if (data.nearest_cell_approaching) {
+      etaEl.innerHTML = `<i class="fa-solid fa-arrow-trend-up text-warning"></i> Approaching`;
+    } else {
+      etaEl.innerHTML = `<i class="fa-solid fa-arrow-right text-muted"></i> Tracking away`;
+    }
+  } else {
+    cellEl.innerText = "None in range";
+    etaEl.innerText = "No storm core within 60km";
+  }
+
+  document.getElementById("searchedLightningCount").innerText = `${data.lightning_strikes_15km} strikes`;
+  document.getElementById("searchedCloudTemp").innerText = `${data.local_cloud_top_temp_c} °C`;
+
+  // NDMA safety advice
+  document.getElementById("searchedSafetyText").innerText = data.safety_directive;
+}
+
+function clearSearchedArea() {
+  STATE.searchedLocation = null;
+  STATE.searchedAssessment = null;
+  if (STATE.layers.searchedAreaGroup) {
+    STATE.layers.searchedAreaGroup.clearLayers();
+  }
+  const card = document.getElementById("searchedAreaCard");
+  if (card) {
+    card.classList.add("hidden");
+    card.style.display = "none";
+  }
+  const searchInput = document.getElementById("areaSearchInput");
+  if (searchInput) searchInput.value = "";
+  document.getElementById("btnClearSearch")?.classList.add("hidden");
+}
+
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
 

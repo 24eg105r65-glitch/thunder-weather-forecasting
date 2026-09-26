@@ -223,3 +223,58 @@ class FullNowcastResponse(BaseModel):
     active_alerts: List[EarlyWarningAlert]
     overall_threat_level: Literal["Low", "Moderate", "High", "Severe"]
 
+
+class LocationSearchResult(BaseModel):
+    name: str
+    lat: float
+    lon: float
+    category: Literal["city", "locality", "landmark", "airport", "radar_station", "coordinate"]
+    state: Optional[str] = None
+    nearest_region_id: str
+    nearest_radar_station: str
+    distance_to_radar_km: float
+
+
+class LiveWeatherObservation(BaseModel):
+    source: str = "OpenWeatherMap Live In-Situ Network"
+    condition: str
+    condition_main: str
+    description: Optional[str] = None
+    icon_url: str
+    icon_code: Optional[str] = None
+    temperature_c: float
+    temp_c: Optional[float] = None
+    feels_like_c: float
+    humidity_pct: int
+    pressure_hpa: float
+    wind_speed_kmh: float
+    wind_speed_mps: float
+    wind_deg: float
+    cloud_coverage_pct: int
+    rain_1h_mm: float
+    city_name: Optional[str] = None
+
+
+class AreaThreatAssessment(BaseModel):
+    query_lat: float
+    query_lon: float
+    location_name: str
+    time_offset_min: int
+    nearest_region_id: str
+    nearest_radar_station: str
+    distance_to_radar_km: float
+    local_dbz: float
+    local_cloud_top_temp_c: float
+    estimated_rain_rate_mmh: float
+    threat_level: Literal["Low", "Moderate", "High", "Severe"]
+    threat_score_pct: int
+    nearest_cell_id: Optional[str] = None
+    distance_to_nearest_cell_km: Optional[float] = None
+    nearest_cell_approaching: bool = False
+    estimated_cell_eta_minutes: Optional[int] = None
+    lightning_strikes_15km: int = 0
+    safety_directive: str
+    live_weather: Optional[LiveWeatherObservation] = None
+
+
+

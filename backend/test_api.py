@@ -114,9 +114,25 @@ def test_endpoints():
     res = client.get("/api/export-bulletin?region=hyderabad&time_offset=0")
     assert res.status_code == 200 and "AEROCAST-AI METEOROLOGICAL NOWCAST BULLETIN" in res.text
     print(f"[OK] /api/export-bulletin OK: Plaintext bulletin generated")
+
+    # 13. Area Search API
+    res = client.get("/api/search-locations?q=gachibowli")
+    assert res.status_code == 200, f"Search locations failed: {res.text}"
+    search_data = res.json()
+    assert len(search_data) > 0, "Expected at least 1 search result for 'gachibowli'"
+    print(f"[OK] /api/search-locations OK: Found {len(search_data)} results for 'gachibowli' (Top: {search_data[0]['name']})")
+
+    # 14. Area Threat Assessment API
+    gachi = search_data[0]
+    res = client.get(f"/api/area-assessment?lat={gachi['lat']}&lon={gachi['lon']}&time_offset=0&name={gachi['name']}")
+    assert res.status_code == 200, f"Area assessment failed: {res.text}"
+    assessment = res.json()
+    assert "threat_level" in assessment
+    print(f"[OK] /api/area-assessment OK: {assessment['location_name']} -> Threat: {assessment['threat_level']} ({assessment['threat_score_pct']}%), Local dBZ: {assessment['local_dbz']}, Nearest Cell: {assessment['distance_to_nearest_cell_km']} km")
     
     print("\n[ALL TESTS PASSED SUCCESSFULLY!]")
 
 
 if __name__ == "__main__":
     test_endpoints()
+

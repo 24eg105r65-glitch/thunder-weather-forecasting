@@ -22,10 +22,16 @@ from .core.schemas import (
     SatelliteGridResponse,
     EarlyWarningAlert,
     ThermodynamicSoundingProfile,
-    ModelBenchmarkData
+    ModelBenchmarkData,
+    LocationSearchResult,
+    AreaThreatAssessment,
+    LiveWeatherObservation
 )
 from .core.data_generator import REGIONS, get_all_regions
+from .core.geocoding import search_locations, assess_area_threat
 from .services.nowcast_service import NowcastService
+from .services.weather_api_service import fetch_live_weather, get_tile_layer_url
+
 
 
 
@@ -84,6 +90,55 @@ def get_status():
 def get_regions():
     """Get list of active meteorological forecast zones and DWR stations."""
     return get_all_regions()
+
+
+@app.get("/api/search-locations", response_model=List[LocationSearchResult])
+def get_search_locations(
+    q: str = Query(..., min_length=1, description="Search query string for city, locality, district, landmark or coordinates"),
+    limit: int = Query(10, ge=1, le=30)
+):
+    """Search specific geographic areas, districts, localities, radar stations or GPS coordinates."""
+    return search_locations(query=q, limit=limit)
+
+
+@app.get("/api/area-assessment", response_model=AreaThreatAssessment)
+def get_area_assessment(
+    lat: float = Query(..., ge=-90.0, le=90.0, description="Latitude of target area"),
+    lon: float = Query(..., ge=-180.0, le=180.0, description="Longitude of target area"),
+    time_offset: int = Query(0, description="Timeline offset in minutes (-60 to +90)"),
+    region: Optional[str] = Query(None, description="Optional region ID context"),
+    name: Optional[str] = Query(None, description="Optional resolved location name")
+):
+    """Retrieve localized meteorological nowcast, distance to severe cells, local dBZ, and life-safety directives."""
+    return assess_area_threat(
+        lat=lat,
+        lon=lon,
+        time_offset_min=time_offset,
+        region_id=region,
+        location_name=name
+    )
+
+
+@app.get("/api/live-weather", response_model=Optional[LiveWeatherObservation])
+def get_live_ground_weather(
+    lat: float = Query(..., ge=-90.0, le=90.0),
+    lon: float = Query(..., ge=-180.0, le=180.0)
+):
+    """Retrieve real-time in situ ground weather observations via OpenWeatherMap API."""
+    data = fetch_live_weather(lat, lon)
+    if data:
+        return LiveWeatherObservation(**data)
+    return None
+
+
+@app.get("/api/weather-tile-url")
+def get_weather_tile_layer_url(layer: str = Query("precipitation_new", description="Tile layer name (precipitation_new, clouds_new, wind_new, temp_new)")):
+    """Retrieve OpenWeatherMap live radar precipitation tile template for Leaflet."""
+    return {
+        "layer": layer,
+        "tile_url": get_tile_layer_url(layer),
+        "source": "OpenWeatherMap Radar Tiles"
+    }
 
 
 @app.get("/api/timeline")
@@ -204,7 +259,7 @@ def get_export_bulletin(region: str = Query("hyderabad"), time_offset: int = Que
     p60 = nowcast.nowcasts["60m"]
     
     bulletin = f"""========================================================================
-⚡ AEROCAST-AI METEOROLOGICAL NOWCAST BULLETIN
+[AEROCAST-AI METEOROLOGICAL NOWCAST BULLETIN]
 ISSUED BY: Automated Convective Early Warning Engine (IMD / NDMA Standard)
 TIMESTAMP: {nowcast.current_time}
 FORECAST REGION: {nowcast.region_name} (ID: {nowcast.region_id.upper()})
@@ -270,6 +325,22 @@ os.makedirs(static_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
+@app.get("/style.css")
+def serve_root_css():
+    css_path = os.path.join(static_dir, "style.css")
+    if os.path.exists(css_path):
+        return FileResponse(css_path, media_type="text/css")
+    return Response(content="", media_type="text/css")
+
+
+@app.get("/app.js")
+def serve_root_js():
+    js_path = os.path.join(static_dir, "app.js")
+    if os.path.exists(js_path):
+        return FileResponse(js_path, media_type="application/javascript")
+    return Response(content="", media_type="application/javascript")
+
+
 @app.get("/")
 def serve_index():
     """Serve the interactive GIS nowcasting dashboard."""
@@ -277,3 +348,4 @@ def serve_index():
     if os.path.exists(index_path):
         return FileResponse(index_path)
     return HTMLResponse("<h1>Aerocast-AI Backend Running</h1><p>Frontend index.html initializing...</p>")
+

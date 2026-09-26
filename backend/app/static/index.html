@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   
   <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="dark-theme">
@@ -37,8 +38,44 @@
       </div>
     </div>
 
-    <!-- Center Region & Lead Time Selection -->
+    <!-- Center Region, Lead Time Selection & Area Search -->
     <div class="nav-controls">
+      <!-- Search Specific Area / Locality / Coordinates -->
+      <div class="area-search-container" id="areaSearchContainer">
+        <div class="area-search-input-wrapper">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input 
+            type="text" 
+            id="areaSearchInput" 
+            class="area-search-input" 
+            placeholder="Search specific area (e.g. Gachibowli, Salt Lake, Dwarka)..."
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Search geographic area"
+          >
+          <button class="search-clear-btn hidden" id="btnClearSearch" title="Clear Search" aria-label="Clear search query">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <span class="search-kbd-shortcut" title="Press Ctrl+K or / to search"><kbd>Ctrl+K</kbd></span>
+        </div>
+        <!-- Autocomplete Suggestions Dropdown -->
+        <div class="search-suggestions-dropdown hidden" id="searchSuggestionsDropdown">
+          <div class="suggestions-header">
+            <span><i class="fa-solid fa-location-crosshairs"></i> Suggested Areas &amp; Locations</span>
+            <span class="suggestions-count" id="suggestionsCount">0 found</span>
+          </div>
+          <div class="suggestions-list" id="suggestionsList">
+            <!-- Populated dynamically -->
+          </div>
+          <div class="suggestions-footer">
+            <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+            <span><kbd>↵</kbd> Select</span>
+            <span><kbd>Esc</kbd> Close</span>
+            <span><i class="fa-solid fa-map-pin"></i> Click map to inspect any point</span>
+          </div>
+        </div>
+      </div>
+
       <div class="region-select-wrapper" title="Select Doppler Weather Radar Station">
         <i class="fa-solid fa-location-dot"></i>
         <select id="regionSelector" class="custom-select" aria-label="Forecast Region">
@@ -76,6 +113,9 @@
       </button>
       <button class="btn btn-outline" id="btnOpenMetrics" title="Model verification metrics &amp; AI Benchmarks">
         <i class="fa-solid fa-chart-line"></i> Model AI Stats
+      </button>
+      <button class="btn btn-outline" id="btnOpenPrivacy" title="Privacy Policy &amp; Data Governance">
+        <i class="fa-solid fa-user-shield"></i> Privacy Policy
       </button>
       <button class="btn btn-alert" id="btnOpenAlerts" title="Active CAP Early Warnings">
         <i class="fa-solid fa-triangle-exclamation"></i>
@@ -270,6 +310,10 @@
             <input type="checkbox" checked id="chkTrack">
             <span class="toggle-dot track-dot"></span> Storm Vector &amp; Cone
           </label>
+          <label class="layer-toggle-btn active" id="toggleOwmLayer" title="Toggle OpenWeatherMap Live Precipitation & Cloud Radar Layer">
+            <input type="checkbox" checked id="chkOwmPrecip">
+            <span class="toggle-dot owm-dot"></span> Live Rain (OWM)
+          </label>
         </div>
 
         <!-- The Leaflet GIS Map Container -->
@@ -303,6 +347,108 @@
             <div><span>Max Reflectivity:</span> <strong id="cellInfoMaxDbz">65.6 dBZ</strong></div>
             <div><span>Trajectory:</span> <strong id="cellInfoTraj">48° @ 38 km/h</strong></div>
             <div><span>Area:</span> <strong id="cellInfoArea">420 km²</strong></div>
+          </div>
+        </div>
+
+        <!-- Searched Specific Area Weather Threat Card -->
+        <div class="searched-area-card hidden" id="searchedAreaCard">
+          <div class="searched-area-header">
+            <div class="area-title-group">
+              <i class="fa-solid fa-location-dot area-pin-icon"></i>
+              <div>
+                <h4 id="searchedAreaTitle">Gachibowli, Hyderabad</h4>
+                <div class="area-meta-row">
+                  <span class="badge badge-sm" id="searchedAreaCategory">Locality</span>
+                  <span class="area-coords font-mono" id="searchedAreaCoords">17.4401° N, 78.3489° E</span>
+                </div>
+              </div>
+            </div>
+            <div class="header-right-actions">
+              <span class="badge badge-severe" id="searchedAreaThreatBadge">Severe Threat</span>
+              <button class="card-close-btn" id="btnCloseSearchedArea" onclick="event.stopPropagation(); document.getElementById('searchedAreaCard').classList.add('hidden'); document.getElementById('searchedAreaCard').style.display='none';" title="Close Area Card"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+
+          <div class="searched-area-body">
+            <!-- Threat Score Gauge Banner -->
+            <div class="searched-threat-banner" id="searchedThreatBanner">
+              <div class="threat-score-pill">
+                <span class="threat-pct font-mono" id="searchedThreatScore">96%</span>
+                <span class="threat-sub">Threat Index</span>
+              </div>
+              <div class="threat-banner-text">
+                <strong id="searchedThreatHeadline">High-Impact Severe Convective Zone</strong>
+                <span id="searchedRadarContext">Covered by DWR Begumpet (18.2 km)</span>
+              </div>
+            </div>
+
+            <!-- OpenWeatherMap Real-Time In-Situ Observations Box -->
+            <div class="owm-live-box hidden" id="owmLiveBox">
+              <div class="owm-live-head">
+                <span><i class="fa-solid fa-satellite-dish text-cyan"></i> Live Surface Observation (OpenWeatherMap)</span>
+                <span class="live-pulse-dot"></span>
+              </div>
+              <div class="owm-content-row">
+                <img src="https://openweathermap.org/img/wn/02d.png" id="owmWeatherIcon" class="owm-weather-img" alt="Condition">
+                <div class="owm-details">
+                  <div class="owm-temp-line">
+                    <strong class="font-mono text-cyan" id="owmTemp">-- °C</strong>
+                    <span class="owm-condition-text" id="owmCondition">Loading...</span>
+                  </div>
+                  <div class="owm-sub-grid">
+                    <span><i class="fa-solid fa-droplet text-blue"></i> <b id="owmHumidity">--%</b> RH</span>
+                    <span><i class="fa-solid fa-wind text-cyan"></i> <b id="owmWind">-- km/h</b></span>
+                    <span><i class="fa-solid fa-gauge text-warning"></i> <b id="owmPressure">-- hPa</b></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Meteorological Metrics Grid -->
+            <div class="searched-metrics-grid">
+              <div class="searched-metric-item">
+                <span class="lbl"><i class="fa-solid fa-cloud-rain text-accent"></i> Local Radar dBZ</span>
+                <strong class="val font-mono" id="searchedLocalDbz">-- dBZ</strong>
+                <span class="sub" id="searchedRainRate">-- mm/h rain</span>
+              </div>
+              <div class="searched-metric-item">
+                <span class="lbl"><i class="fa-solid fa-cloud-bolt text-danger"></i> Nearest Storm Core</span>
+                <strong class="val font-mono text-danger" id="searchedNearestCell">-- km</strong>
+                <span class="sub" id="searchedCellEta"><i class="fa-solid fa-arrow-right"></i> None in range</span>
+              </div>
+              <div class="searched-metric-item">
+                <span class="lbl"><i class="fa-solid fa-bolt text-warning"></i> Lightning (15km)</span>
+                <strong class="val font-mono text-warning" id="searchedLightningCount">0 strikes</strong>
+                <span class="sub">Active CG/IC field</span>
+              </div>
+              <div class="searched-metric-item">
+                <span class="lbl"><i class="fa-solid fa-satellite text-blue"></i> Cloud Top Temp</span>
+                <strong class="val font-mono" id="searchedCloudTemp">-- °C</strong>
+                <span class="sub">Convective cloud status</span>
+              </div>
+            </div>
+
+            <!-- Life-Safety Advisory Directive -->
+            <div class="searched-safety-box" id="searchedSafetyBox">
+              <div class="safety-icon"><i class="fa-solid fa-person-shelter"></i></div>
+              <div class="safety-content">
+                <strong>NDMA / IMD Area Advisory:</strong>
+                <p id="searchedSafetyText">Atmospherically stable conditions at this location.</p>
+              </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="searched-actions-row">
+              <button class="btn btn-xs btn-outline" id="btnRecenterSearchedArea" title="Center map on this area">
+                <i class="fa-solid fa-crosshairs"></i> Center
+              </button>
+              <button class="btn btn-xs btn-outline" id="btnSwitchToNearestRadar" title="Switch radar overlay to nearest station">
+                <i class="fa-solid fa-tower-broadcast"></i> Switch Radar
+              </button>
+              <button class="btn btn-xs btn-outline btn-clear-area" id="btnClearAreaPin" title="Remove search pin">
+                <i class="fa-solid fa-trash-can"></i> Clear Pin
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -424,13 +570,13 @@
         <div id="guideTab1Content" class="guide-tab-content">
           <div class="guide-hero-banner">
             <h3>Welcome to Aerocast-AI Nowcasting</h3>
-            <p>Aerocast-AI delivers automated 0–90 minute localized forecasts of severe convective storms, lightning strikes, and damaging winds across India using multi-sensor radar and satellite AI models.</p>
+            <p>Aerocast-AI delivers automated 0-90 minute localized forecasts of severe convective storms, lightning strikes, and damaging winds across India using multi-sensor radar and satellite AI models.</p>
           </div>
           <div class="guide-steps-grid">
             <div class="guide-step-card">
               <div class="step-num">1</div>
-              <h4>Select a DWR Station</h4>
-              <p>Choose from 8 major Indian Doppler Weather Radar zones (Hyderabad, Kolkata, Delhi-NCR, Bhubaneswar, Mumbai, etc.) from the top dropdown.</p>
+              <h4>Search Area or Select Radar</h4>
+              <p>Type any locality, city, district, or landmark (e.g. <em>Gachibowli, Salt Lake, Whitefield</em>) in the search bar, or choose from 8 DWR stations.</p>
             </div>
             <div class="guide-step-card">
               <div class="step-num">2</div>
@@ -440,7 +586,7 @@
             <div class="guide-step-card">
               <div class="step-num">3</div>
               <h4>Scrub the Timeline</h4>
-              <p>Use the bottom slider or press <kbd>Space</kbd> to play animated storm cell advection from 1 hour in the past ($t-60\text{m}$) into the future ($+90\text{m}$).</p>
+              <p>Use the bottom slider or press <kbd>Space</kbd> to play animated storm cell advection from 1 hour in the past (t-60m) into the future (+90m).</p>
             </div>
             <div class="guide-step-card">
               <div class="step-num">4</div>
@@ -457,21 +603,21 @@
           <div class="guide-legend-table">
             <div class="guide-legend-row">
               <span class="guide-color-box c-green"></span>
-              <strong>15 – 30 dBZ (Light to Moderate Rain)</strong>
+              <strong>15 - 30 dBZ (Light to Moderate Rain)</strong>
               <span>Stratiform rain or early developing shower. Minimal lightning risk.</span>
             </div>
             <div class="guide-legend-row">
               <span class="guide-color-box c-yellow"></span>
-              <strong>35 – 45 dBZ (Heavy Convective Rain)</strong>
+              <strong>35 - 45 dBZ (Heavy Convective Rain)</strong>
               <span>Convective initiation. Updrafts carrying substantial moisture aloft.</span>
             </div>
             <div class="guide-legend-row">
               <span class="guide-color-box c-red"></span>
-              <strong>50 – 58 dBZ (Severe Thunderstorm)</strong>
+              <strong>50 - 58 dBZ (Severe Thunderstorm)</strong>
               <span>Vigorous convective core, intense cloud-to-ground lightning, and gusty winds.</span>
             </div>
             <div class="guide-legend-row">
-              <span class="guide-color-box c-purple"></span>
+              <span class="guide-color-box c-extreme"></span>
               <strong>60+ dBZ (Violent Hail / Severe Supercell)</strong>
               <span>Extremely dangerous storm core with high probability of large hail and microbursts.</span>
             </div>
@@ -483,20 +629,20 @@
           <h3 class="section-title">Key Physical Indicators Explained</h3>
           <div class="guide-glossary-grid">
             <div class="glossary-item">
-              <h4>⚡ Schultz 2σ Lightning Jump</h4>
-              <p>A sudden exponential surge in total lightning flash rate ($\Delta F / \sigma \ge 2.0$) that precedes severe downbursts and hail by <strong>15 to 30 minutes</strong>.</p>
+              <h4><i class="fa-solid fa-bolt text-warning"></i> Schultz 2σ Lightning Jump</h4>
+              <p>A sudden exponential surge in total lightning flash rate (dF/dt ≥ 2.0σ) that precedes severe downbursts and hail by <strong>15 to 30 minutes</strong>.</p>
             </div>
             <div class="glossary-item">
-              <h4>🔥 CAPE (Updraft Energy)</h4>
-              <p>Convective Available Potential Energy ($J/kg$). High CAPE ($>2000$) provides the thermodynamic fuel needed for explosive thunderstorm updrafts.</p>
+              <h4><i class="fa-solid fa-fire text-danger"></i> CAPE (Updraft Energy)</h4>
+              <p>Convective Available Potential Energy (J/kg). High CAPE (>2000 J/kg) provides the thermodynamic fuel needed for explosive thunderstorm updrafts.</p>
             </div>
             <div class="glossary-item">
-              <h4>🛡️ CIN (Convective Inhibition)</h4>
-              <p>The atmospheric "lid" or barrier. Low CIN ($<50\text{ J/kg}$) allows storms to trigger easily, while high CIN caps convection.</p>
+              <h4><i class="fa-solid fa-shield-halved text-cyan"></i> CIN (Convective Inhibition)</h4>
+              <p>The atmospheric "lid" or barrier. Low CIN (<50 J/kg) allows storms to trigger easily, while high CIN caps convection.</p>
             </div>
             <div class="glossary-item">
-              <h4>🛰️ Satellite Cloud Top Cooling</h4>
-              <p>INSAT-3D measures cloud-top infrared temperature. Fast cooling ($\le -5^\circ\text{C} / 15\text{min}$) indicates rapidly climbing updrafts penetrating the tropopause.</p>
+              <h4><i class="fa-solid fa-satellite text-blue"></i> Satellite Cloud Top Cooling</h4>
+              <p>INSAT-3D measures cloud-top infrared temperature. Fast cooling (≤ -5 °C / 15min) indicates rapidly climbing updrafts penetrating the tropopause.</p>
             </div>
           </div>
         </div>
@@ -514,7 +660,7 @@
             <div class="tip-card">
               <i class="fa-solid fa-sliders text-warning"></i>
               <h4>Interactive Sliders</h4>
-              <p>Drag the sliders to test specific thresholds — e.g. increase CAPE to 3500 and lower CIN to 15 to trigger an instant severe prediction reaction.</p>
+              <p>Drag the sliders to test specific thresholds (e.g. increase CAPE to 3500 and lower CIN to 15 to trigger an instant severe prediction reaction).</p>
             </div>
           </div>
         </div>
@@ -683,7 +829,7 @@
               <span class="sk-leg-item"><span class="sk-dot red-dot"></span> Environmental Temp (T)</span>
               <span class="sk-leg-item"><span class="sk-dot green-dot"></span> Dewpoint (Td)</span>
               <span class="sk-leg-item"><span class="sk-dot cyan-dot"></span> Parcel Ascent (CAPE)</span>
-              <span class="sk-leg-item"><span class="sk-dot purple-dot"></span> Hail Growth (-10°C to -30°C)</span>
+              <span class="sk-leg-item"><span class="sk-dot slate-dot"></span> Hail Growth (-10°C to -30°C)</span>
             </div>
           </div>
 
@@ -730,7 +876,7 @@
           <span class="mg-leg-item"><span class="mg-dot blue-dot"></span> Cloud Top Temp (°C)</span>
           <span class="mg-leg-item"><span class="mg-dot yellow-dot"></span> Flash Rate (f/min)</span>
           <span class="mg-leg-item"><span class="mg-dot red-dot"></span> 30m Storm Prob (%)</span>
-          <span class="mg-leg-item"><span class="mg-dot purple-dot"></span> 60m Storm Prob (%)</span>
+          <span class="mg-leg-item"><span class="mg-dot cyan-dot"></span> 60m Storm Prob (%)</span>
         </div>
       </div>
     </div>
@@ -857,6 +1003,65 @@
     </div>
   </div>
 
+  <!-- Interactive Modal: Privacy Policy & Data Governance -->
+  <div class="modal-overlay hidden" id="privacyModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-user-shield text-cyan"></i> Privacy Policy &amp; Data Governance</h2>
+        <button class="modal-close" id="btnClosePrivacy"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="privacy-notice-box">
+          <p class="privacy-intro">
+            Aerocast-AI is committed to full user privacy and data minimization. This platform operates as an open meteorological early-warning cockpit with zero monetization of personal data.
+          </p>
+        </div>
+
+        <div class="privacy-grid">
+          <div class="privacy-card">
+            <h4><i class="fa-solid fa-ban text-success"></i> 1. Zero Personal Data Tracking</h4>
+            <p>We do not collect names, phone numbers, email addresses, IP logs, or personal identifiers. No third-party marketing scripts or behavioral tracking cookies are used.</p>
+          </div>
+
+          <div class="privacy-card">
+            <h4><i class="fa-solid fa-location-crosshairs text-cyan"></i> 2. Ephemeral Geolocation Processing</h4>
+            <p>Searched locations and GPS coordinates are processed strictly in volatile memory to calculate distance to radar storm cells and fetch local nowcasts. Coordinates are never persisted in databases.</p>
+          </div>
+
+          <div class="privacy-card">
+            <h4><i class="fa-solid fa-satellite text-blue"></i> 3. Public Meteorological Ingestion</h4>
+            <p>Doppler radar reflectivity, INSAT-3D infrared cloud temperatures, and lightning strike data are gathered from open meteorological services (OpenWeatherMap, IMD, NOAA) for disaster risk reduction.</p>
+          </div>
+
+          <div class="privacy-card">
+            <h4><i class="fa-solid fa-microchip text-warning"></i> 4. Client-Side Simulation &amp; Soundings</h4>
+            <p>Thermodynamic sounding analysis (Skew-T Log-P), time-series meteogram rendering, and What-If scenario simulations run locally in your web browser runtime.</p>
+          </div>
+
+          <div class="privacy-card">
+            <h4><i class="fa-solid fa-shield-halved text-danger"></i> 5. NDMA / IMD Standard Compliance</h4>
+            <p>Emergency advisories adhere to National Disaster Management Authority (NDMA) and Common Alerting Protocol (CAP v1.2) standards for life safety.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnDismissPrivacy">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Operational Footer Bar -->
+  <footer class="app-footer">
+    <div class="footer-left">
+      <span class="footer-badge"><i class="fa-solid fa-shield-halved"></i> NDMA / IMD CAP Standard v1.2</span>
+      <span class="footer-sep">|</span>
+      <span>Real-Time Convective Decision Support Platform</span>
+    </div>
+    <div class="footer-right">
+      <a href="#" id="linkFooterPrivacy" class="footer-privacy-link"><i class="fa-solid fa-user-shield"></i> Privacy Policy &amp; Data Governance</a>
+    </div>
+  </footer>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -868,6 +1073,7 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <!-- Custom JS Application -->
-  <script src="/static/app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
+
