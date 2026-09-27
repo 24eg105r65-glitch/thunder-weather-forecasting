@@ -55,8 +55,56 @@ function getApiUrl(endpoint) {
   return endpoint;
 }
 
+/* ================= View Mode Switcher (Simple Citizen vs Advanced Radar) ================= */
+function initModeSwitch() {
+  const savedMode = localStorage.getItem("aerocast_view_mode") || "simple";
+  setMode(savedMode, false);
+
+  const btnCitizen = document.getElementById("btnCitizenMode");
+  const btnExpert = document.getElementById("btnExpertMode");
+
+  if (btnCitizen) {
+    btnCitizen.addEventListener("click", () => setMode("simple", true));
+  }
+  if (btnExpert) {
+    btnExpert.addEventListener("click", () => setMode("expert", true));
+  }
+}
+
+function setMode(mode, notify = true) {
+  const isSimple = mode === "simple";
+  document.body.classList.remove("mode-simple", "mode-expert");
+  document.body.classList.add(isSimple ? "mode-simple" : "mode-expert");
+
+  const btnCitizen = document.getElementById("btnCitizenMode");
+  const btnExpert = document.getElementById("btnExpertMode");
+
+  if (btnCitizen && btnExpert) {
+    if (isSimple) {
+      btnCitizen.classList.add("active");
+      btnExpert.classList.remove("active");
+    } else {
+      btnExpert.classList.add("active");
+      btnCitizen.classList.remove("active");
+    }
+  }
+
+  try {
+    localStorage.setItem("aerocast_view_mode", isSimple ? "simple" : "expert");
+  } catch (e) {}
+
+  if (notify) {
+    if (isSimple) {
+      showToast("Simple Citizen View: plain-English warnings & safety advice", "info");
+    } else {
+      showToast("Advanced Radar View: Doppler soundings & AI metrics", "info");
+    }
+  }
+}
+
 // Initialize Application
 document.addEventListener("DOMContentLoaded", async () => {
+  initModeSwitch();
   initMap();
   initTimelineUI();
   setupEventListeners();
@@ -401,6 +449,136 @@ function renderTelemetry(nowcast) {
 
   // Update Natural Language Situation Summary Card
   updateSituationSummary(nowcast, pred);
+
+  // Update Citizen Hero Card & Impact Metrics
+  renderCitizenHeroCard(nowcast, pred);
+}
+
+/* ================= Citizen Hero Quick Warning Card Rendering ================= */
+function renderCitizenHeroCard(nowcast, pred) {
+  const heroCard = document.getElementById("citizenHeroCard");
+  const iconBox = document.getElementById("citizenStatusIconBox");
+  const icon = document.getElementById("citizenStatusIcon");
+  const title = document.getElementById("citizenStatusTitle");
+  const etaText = document.getElementById("citizenEtaText");
+  const summaryText = document.getElementById("citizenSummaryText");
+  
+  const rainVal = document.getElementById("citizenRainVal");
+  const rainSub = document.getElementById("citizenRainSub");
+  const ltgVal = document.getElementById("citizenLightningVal");
+  const ltgSub = document.getElementById("citizenLightningSub");
+  const windVal = document.getElementById("citizenWindVal");
+  const windSub = document.getElementById("citizenWindSub");
+  const hailVal = document.getElementById("citizenHailVal");
+  const hailSub = document.getElementById("citizenHailSub");
+
+  if (!heroCard) return;
+
+  const prob = pred.thunderstorm_probability;
+  const ltgProb = pred.lightning_probability;
+  const obs = nowcast.observation;
+  const regionName = nowcast.region_name || "the forecast area";
+  const dbz = pred.expected_max_dbz || (obs ? obs.max_reflectivity_dbz : 40);
+  const flashCount = (obs && obs.flash_count_15min) ? obs.flash_count_15min : 0;
+  const isJump = obs && obs.lightning_jump_sigma >= 2.0;
+  const isHail = dbz >= 55 || (obs && obs.vil_kg_m2 >= 25);
+
+  // Find nearest cell ETA or use lead time
+  let etaMsg = `Forecast for +${pred.lead_time_minutes} min`;
+  if (nowcast.active_cells && nowcast.active_cells.length > 0) {
+    const firstCell = nowcast.active_cells[0];
+    if (firstCell.trajectory && firstCell.trajectory.length > 0) {
+      etaMsg = `Storm arriving in ~${firstCell.trajectory[0].lead_time_min || 20} min`;
+    } else {
+      etaMsg = `Active cell tracking ${firstCell.direction_cardinal || 'NE'}`;
+    }
+  }
+
+  // Update Status Theme & Text
+  if (prob >= 0.70 || pred.thunderstorm_risk === "Severe" || pred.thunderstorm_risk === "Extreme") {
+    heroCard.className = "card citizen-hero-card severe";
+    if (iconBox) {
+      iconBox.style.background = "rgba(239, 68, 68, 0.18)";
+      iconBox.style.color = "var(--accent-danger)";
+    }
+    if (icon) icon.className = "fa-solid fa-triangle-exclamation";
+    if (title) title.innerText = "DANGER: Severe Thunderstorm Approaching";
+    if (summaryText) {
+      summaryText.innerHTML = `Severe convective storm core active over <strong>${regionName}</strong>. High risk of dangerous lightning (${flashCount} strikes), wind squalls (${Math.round(pred.storm_speed_kmh * 1.3)}-${Math.round(pred.storm_speed_kmh * 1.6)} km/h), and heavy downpours in the next 30 to 60 minutes.`;
+    }
+    if (etaText) etaText.innerText = etaMsg;
+  } else if (prob >= 0.35 || pred.thunderstorm_risk === "Moderate" || pred.thunderstorm_risk === "High") {
+    heroCard.className = "card citizen-hero-card moderate";
+    if (iconBox) {
+      iconBox.style.background = "rgba(245, 158, 11, 0.18)";
+      iconBox.style.color = "var(--accent-warning)";
+    }
+    if (icon) icon.className = "fa-solid fa-cloud-bolt";
+    if (title) title.innerText = "CAUTION: Developing Storm Nearby";
+    if (summaryText) {
+      summaryText.innerHTML = `Moderate convective shower activity building near <strong>${regionName}</strong>. Showers and isolated lightning expected within ${pred.lead_time_minutes} minutes.`;
+    }
+    if (etaText) etaText.innerText = etaMsg;
+  } else {
+    heroCard.className = "card citizen-hero-card stable";
+    if (iconBox) {
+      iconBox.style.background = "rgba(16, 185, 129, 0.18)";
+      iconBox.style.color = "var(--accent-success)";
+    }
+    if (icon) icon.className = "fa-solid fa-circle-check";
+    if (title) title.innerText = "ALL CLEAR: Atmospheric Conditions Stable";
+    if (summaryText) {
+      summaryText.innerHTML = `Atmospheric conditions are stable across <strong>${regionName}</strong>. No severe rain squalls or lightning threats detected at this time.`;
+    }
+    if (etaText) etaText.innerText = "No storm detected";
+  }
+
+  // 1. Rain Likelihood Card
+  if (rainVal) {
+    const rainPct = Math.round(prob * 100);
+    const rainType = dbz >= 50 ? "Heavy Torrential" : dbz >= 35 ? "Moderate Rain" : "Light Rain / None";
+    rainVal.innerText = `${rainPct}% (${rainType})`;
+  }
+  if (rainSub) {
+    const estRate = dbz >= 50 ? "25 - 50 mm/hr" : dbz >= 35 ? "5 - 20 mm/hr" : "< 2 mm/hr";
+    rainSub.innerText = `Expected: ${estRate}`;
+  }
+
+  // 2. Lightning Threat Card
+  if (ltgVal) {
+    if (ltgProb >= 0.70 || flashCount >= 30) {
+      ltgVal.innerHTML = `<span class="text-danger">EXTREME THREAT</span>`;
+    } else if (ltgProb >= 0.35 || flashCount >= 10) {
+      ltgVal.innerHTML = `<span class="text-warning">MODERATE THREAT</span>`;
+    } else {
+      ltgVal.innerHTML = `<span class="text-success">LOW / MINIMAL</span>`;
+    }
+  }
+  if (ltgSub) {
+    ltgSub.innerText = `${flashCount} strikes recorded in past 15 min`;
+  }
+
+  // 3. Wind Gusts Card
+  if (windVal) {
+    const minGust = Math.round(pred.storm_speed_kmh * 1.2);
+    const maxGust = Math.round(pred.storm_speed_kmh * 1.6);
+    windVal.innerText = `${minGust} - ${maxGust} km/h`;
+  }
+  if (windSub) {
+    windSub.innerText = `Heading ${pred.storm_direction_cardinal} (${pred.storm_heading_deg}°)`;
+  }
+
+  // 4. Hail / Squall Card
+  if (hailVal) {
+    if (isHail || isJump) {
+      hailVal.innerHTML = `<span class="text-danger">ELEVATED RISK</span>`;
+    } else {
+      hailVal.innerHTML = `<span class="text-success">LOW RISK</span>`;
+    }
+  }
+  if (hailSub) {
+    hailSub.innerText = isHail ? "Hail stones / squall possible" : "No hail expected";
+  }
 }
 
 /* ================= Natural Language Situation Summary ================= */
