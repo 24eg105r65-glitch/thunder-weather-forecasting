@@ -1148,6 +1148,28 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Firebase App & Analytics SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcALLFOzJxYeymZnyqKRsU69haERLpfps",
+      authDomain: "thunder-weather-forecasting.firebaseapp.com",
+      projectId: "thunder-weather-forecasting",
+      storageBucket: "thunder-weather-forecasting.firebasestorage.app",
+      messagingSenderId: "837833640757",
+      appId: "1:837833640757:web:fd29456afea5dfc9b65a7c",
+      measurementId: "G-3JLJBQHEWV"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    window.firebaseApp = app;
+    window.firebaseAnalytics = analytics;
+  </script>
+
   <!-- Custom JS Application -->
   <script src="app.js"></script>
 </body>
