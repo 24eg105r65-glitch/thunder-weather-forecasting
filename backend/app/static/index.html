@@ -1126,6 +1126,79 @@
     </div>
   </div>
 
+  <!-- ================= AI Weather & Disaster Safety Assistant Chatbot ================= -->
+  <!-- Floating Chatbot Trigger Button -->
+  <button class="chatbot-trigger-btn" id="btnOpenChatbot" title="Ask AI Weather & Safety Assistant">
+    <i class="fa-solid fa-headset"></i>
+    <span class="chatbot-btn-text">Ask AI Assistant</span>
+    <span class="chat-status-pulse"></span>
+  </button>
+
+  <!-- Expandable Chatbot Drawer -->
+  <div class="chatbot-drawer hidden" id="chatbotDrawer" role="dialog" aria-label="AI Weather & Safety Assistant">
+    <div class="chatbot-header">
+      <div class="chatbot-title-group">
+        <div class="chatbot-avatar">
+          <i class="fa-solid fa-bolt-lightning"></i>
+        </div>
+        <div>
+          <h4>Aerocast AI Assistant</h4>
+          <span class="chatbot-status-sub" id="chatbotStatusTag">Online • Live Telemetry Synced</span>
+        </div>
+      </div>
+      <div class="chatbot-header-actions">
+        <button class="chat-tool-btn" id="btnClearChat" title="Clear conversation history">
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+        <button class="chat-tool-btn" id="btnCloseChatbot" title="Close assistant">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Messages Scroll Container -->
+    <div class="chatbot-messages" id="chatbotMessages">
+      <!-- Populated dynamically with initial bot greeting -->
+    </div>
+
+    <!-- Quick Question Suggestion Chips -->
+    <div class="chatbot-suggestions" id="chatbotSuggestions">
+      <button class="chat-chip" data-query="Is it safe to go outside right now?">
+        <i class="fa-solid fa-shield-halved text-cyan"></i> Is it safe outside?
+      </button>
+      <button class="chat-chip" data-query="When will rain and storm reach my area?">
+        <i class="fa-solid fa-cloud-showers-heavy text-blue"></i> Rain timing &amp; ETA
+      </button>
+      <button class="chat-chip" data-query="What precautions should I take for lightning and wind?">
+        <i class="fa-solid fa-bolt text-warning"></i> Lightning precautions
+      </button>
+      <button class="chat-chip" data-query="Explain the radar map colors and dBZ in simple terms.">
+        <i class="fa-solid fa-palette text-accent"></i> Explain radar colors
+      </button>
+      <button class="chat-chip" data-query="What is a Schultz Lightning Jump?">
+        <i class="fa-solid fa-chart-line text-danger"></i> Schultz Lightning Jump
+      </button>
+    </div>
+
+    <!-- Chat Input Form -->
+    <div class="chatbot-footer">
+      <form class="chatbot-input-form" id="chatbotForm">
+        <input 
+          type="text" 
+          id="chatbotInput" 
+          class="chatbot-input" 
+          placeholder="Ask about rain, storm arrival, safety rules, or radar..." 
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Chat input query"
+        >
+        <button type="submit" class="chatbot-send-btn" id="btnSendChat" title="Send Question" aria-label="Send message">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- Operational Footer Bar -->
   <footer class="app-footer">
     <div class="footer-left">
