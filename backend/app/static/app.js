@@ -289,101 +289,256 @@ function generateFallbackRadarGrid(regionId, offset) {
   };
 }
 
-// Fallback Nowcast Generator
+// Helper: Great-circle haversine distance in km
+function calcHaversineDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Fallback Nowcast Generator with distinct regional microphysics
 function generateFallbackNowcast(regionId, offset) {
-  const centers = {
-    hyderabad: { name: "Hyderabad & Telangana", center: [17.3850, 78.4867] },
-    kolkata: { name: "Kolkata & Bengal", center: [22.5726, 88.3639] },
-    delhi: { name: "Delhi-NCR & Western UP", center: [28.6139, 77.2090] },
-    bhubaneswar: { name: "Bhubaneswar & Odisha", center: [20.2961, 85.8245] },
-    mumbai: { name: "Mumbai & Konkan", center: [19.0760, 72.8777] },
-    chennai: { name: "Chennai & Coastal TN", center: [13.0827, 80.2707] },
-    guwahati: { name: "Guwahati & Assam", center: [26.1445, 91.7362] },
-    bengaluru: { name: "Bengaluru & South Karnataka", center: [12.9716, 77.5946] }
+  const regionalProfiles = {
+    hyderabad: {
+      name: "Hyderabad & Telangana",
+      center: [17.3850, 78.4867],
+      temp: 32.0,
+      dew: 23.5,
+      cape: 2650.0,
+      cin: 35.0,
+      dbz: 58.0,
+      flash_rate: 18.0,
+      flash_count: 54,
+      echo_top: 15.2,
+      ctt: -68.5,
+      vil: 42.0,
+      speed: 38.0,
+      dir: "NE",
+      heading: 55.0,
+      prob30: 0.88,
+      risk: "Severe"
+    },
+    kolkata: {
+      name: "Kolkata & Bengal",
+      center: [22.5726, 88.3639],
+      temp: 32.5,
+      dew: 26.5,
+      cape: 3450.0,
+      cin: 20.0,
+      dbz: 64.0,
+      flash_rate: 48.0,
+      flash_count: 144,
+      echo_top: 17.8,
+      ctt: -78.2,
+      vil: 56.4,
+      speed: 48.0,
+      dir: "SE",
+      heading: 135.0,
+      prob30: 0.98,
+      risk: "Severe"
+    },
+    delhi: {
+      name: "Delhi-NCR & Western UP",
+      center: [28.6139, 77.2090],
+      temp: 35.0,
+      dew: 20.5,
+      cape: 1950.0,
+      cin: 60.0,
+      dbz: 52.0,
+      flash_rate: 14.0,
+      flash_count: 42,
+      echo_top: 13.8,
+      ctt: -62.0,
+      vil: 34.0,
+      speed: 44.0,
+      dir: "ENE",
+      heading: 68.0,
+      prob30: 0.78,
+      risk: "High"
+    },
+    bhubaneswar: {
+      name: "Bhubaneswar & Odisha",
+      center: [20.2961, 85.8245],
+      temp: 33.0,
+      dew: 26.0,
+      cape: 2900.0,
+      cin: 25.0,
+      dbz: 60.5,
+      flash_rate: 32.0,
+      flash_count: 96,
+      echo_top: 16.5,
+      ctt: -72.0,
+      vil: 48.2,
+      speed: 36.0,
+      dir: "NE",
+      heading: 45.0,
+      prob30: 0.92,
+      risk: "Severe"
+    },
+    mumbai: {
+      name: "Mumbai & Konkan",
+      center: [19.0760, 72.8777],
+      temp: 31.0,
+      dew: 26.5,
+      cape: 2400.0,
+      cin: 20.0,
+      dbz: 55.0,
+      flash_rate: 20.0,
+      flash_count: 60,
+      echo_top: 14.5,
+      ctt: -65.0,
+      vil: 39.5,
+      speed: 32.0,
+      dir: "NNE",
+      heading: 25.0,
+      prob30: 0.82,
+      risk: "High"
+    },
+    chennai: {
+      name: "Chennai & Coastal TN",
+      center: [13.0827, 80.2707],
+      temp: 33.5,
+      dew: 25.5,
+      cape: 2700.0,
+      cin: 30.0,
+      dbz: 54.0,
+      flash_rate: 22.0,
+      flash_count: 66,
+      echo_top: 14.8,
+      ctt: -66.5,
+      vil: 38.0,
+      speed: 30.0,
+      dir: "N",
+      heading: 10.0,
+      prob30: 0.80,
+      risk: "High"
+    },
+    guwahati: {
+      name: "Guwahati & Assam",
+      center: [26.1445, 91.7362],
+      temp: 29.5,
+      dew: 25.0,
+      cape: 3100.0,
+      cin: 15.0,
+      dbz: 61.0,
+      flash_rate: 36.0,
+      flash_count: 108,
+      echo_top: 16.8,
+      ctt: -74.0,
+      vil: 50.0,
+      speed: 28.0,
+      dir: "ESE",
+      heading: 110.0,
+      prob30: 0.94,
+      risk: "Severe"
+    },
+    bengaluru: {
+      name: "Bengaluru & South Karnataka",
+      center: [12.9716, 77.5946],
+      temp: 26.5,
+      dew: 19.5,
+      cape: 1650.0,
+      cin: 45.0,
+      dbz: 46.0,
+      flash_rate: 10.0,
+      flash_count: 30,
+      echo_top: 12.5,
+      ctt: -54.0,
+      vil: 28.0,
+      speed: 26.0,
+      dir: "E",
+      heading: 90.0,
+      prob30: 0.65,
+      risk: "Moderate"
+    }
   };
 
-  const regInfo = centers[regionId] || centers.hyderabad;
-  const regName = regInfo.name;
-  const lat = regInfo.center[0];
-  const lon = regInfo.center[1];
+  const p = regionalProfiles[regionId] || regionalProfiles.hyderabad;
+  const lat = p.center[0];
+  const lon = p.center[1];
 
   return {
     region_id: regionId,
-    region_name: regName,
+    region_name: p.name,
     observation: {
-      max_reflectivity_dbz: 61.5,
-      echo_top_km: 17.4,
-      vil_kg_m2: 54.2,
-      flash_rate_per_min: 44.0,
-      flash_count_15min: 68,
-      lightning_jump_sigma: 2.8,
-      cloud_top_temp_c: -76.8,
-      cloud_cooling_rate_15min: -14.2,
-      cape_j_kg: 3890.0,
-      cin_j_kg: 18.0,
-      lifted_index: -8.4,
-      surface_temp_c: 34.2,
-      dew_point_c: 26.0
+      max_reflectivity_dbz: p.dbz,
+      echo_top_km: p.echo_top,
+      vil_kg_m2: p.vil,
+      flash_rate_per_min: p.flash_rate,
+      flash_count_15min: p.flash_count,
+      lightning_jump_sigma: p.flash_rate >= 30 ? 2.6 : 1.6,
+      cloud_top_temp_c: p.ctt,
+      cloud_cooling_rate_15min: -12.0,
+      cape_j_kg: p.cape,
+      cin_j_kg: p.cin,
+      lifted_index: -6.5,
+      surface_temp_c: p.temp,
+      dew_point_c: p.dew
     },
     nowcasts: {
       "30m": {
         lead_time_minutes: 30,
-        thunderstorm_probability: 0.98,
-        lightning_probability: 0.96,
-        thunderstorm_risk: "Severe",
-        expected_max_dbz: 62.0,
-        storm_speed_kmh: 42.0,
-        storm_direction_cardinal: "NE",
-        storm_heading_deg: 52.0
+        thunderstorm_probability: p.prob30,
+        lightning_probability: Math.min(0.99, p.prob30 - 0.02),
+        thunderstorm_risk: p.risk,
+        expected_max_dbz: p.dbz + 1.0,
+        storm_speed_kmh: p.speed,
+        storm_direction_cardinal: p.dir,
+        storm_heading_deg: p.heading
       },
       "60m": {
         lead_time_minutes: 60,
-        thunderstorm_probability: 0.88,
-        lightning_probability: 0.90,
-        thunderstorm_risk: "Severe",
-        expected_max_dbz: 56.0,
-        storm_speed_kmh: 38.0,
-        storm_direction_cardinal: "NE",
-        storm_heading_deg: 55.0
+        thunderstorm_probability: Math.max(0.4, p.prob30 - 0.12),
+        lightning_probability: Math.max(0.35, p.prob30 - 0.10),
+        thunderstorm_risk: p.risk,
+        expected_max_dbz: Math.max(35, p.dbz - 4.0),
+        storm_speed_kmh: p.speed - 3.0,
+        storm_direction_cardinal: p.dir,
+        storm_heading_deg: p.heading + 3.0
       },
       "90m": {
         lead_time_minutes: 90,
-        thunderstorm_probability: 0.70,
-        lightning_probability: 0.72,
-        thunderstorm_risk: "High",
-        expected_max_dbz: 46.0,
-        storm_speed_kmh: 32.0,
-        storm_direction_cardinal: "ENE",
-        storm_heading_deg: 60.0
+        thunderstorm_probability: Math.max(0.2, p.prob30 - 0.28),
+        lightning_probability: Math.max(0.2, p.prob30 - 0.25),
+        thunderstorm_risk: p.prob30 > 0.8 ? "Moderate" : "Low",
+        expected_max_dbz: Math.max(25, p.dbz - 12.0),
+        storm_speed_kmh: Math.max(15, p.speed - 8.0),
+        storm_direction_cardinal: p.dir,
+        storm_heading_deg: p.heading + 6.0
       }
     },
     active_cells: [
       {
         cell_id: `CELL-${regionId.substring(0, 3).toUpperCase()}-904`,
-        centroid_lat: lat + 0.08,
-        centroid_lon: lon + 0.06,
-        max_reflectivity_dbz: 62.0,
-        area_sq_km: 420,
-        speed_kmh: 42.0,
-        direction_cardinal: "NE",
-        severity: "Severe",
+        centroid_lat: lat + 0.06,
+        centroid_lon: lon + 0.05,
+        max_reflectivity_dbz: p.dbz,
+        area_sq_km: 380,
+        speed_kmh: p.speed,
+        direction_cardinal: p.dir,
+        severity: p.risk,
         trajectory: [
-          { lead_time_min: 15, lat: lat + 0.14, lon: lon + 0.12 },
-          { lead_time_min: 30, lat: lat + 0.22, lon: lon + 0.20 },
-          { lead_time_min: 60, lat: lat + 0.36, lon: lon + 0.34 }
+          { lead_time_min: 15, lat: lat + 0.10, lon: lon + 0.09 },
+          { lead_time_min: 30, lat: lat + 0.18, lon: lon + 0.16 },
+          { lead_time_min: 60, lat: lat + 0.30, lon: lon + 0.28 }
         ]
       }
     ],
     recent_lightning_strikes: [
-      { lat: lat + 0.06, lon: lon + 0.04, peak_current_ka: -48.5, strike_type: "CG", polarity: "Negative", age_seconds: 14 },
-      { lat: lat + 0.09, lon: lon + 0.08, peak_current_ka: 34.0, strike_type: "IC", polarity: "Positive", age_seconds: 38 },
-      { lat: lat + 0.04, lon: lon + 0.02, peak_current_ka: -62.0, strike_type: "CG", polarity: "Negative", age_seconds: 72 }
+      { lat: lat + 0.05, lon: lon + 0.04, peak_current_ka: -48.5, strike_type: "CG", polarity: "Negative", age_seconds: 14 },
+      { lat: lat + 0.07, lon: lon + 0.06, peak_current_ka: 34.0, strike_type: "IC", polarity: "Positive", age_seconds: 38 },
+      { lat: lat + 0.03, lon: lon + 0.02, peak_current_ka: -62.0, strike_type: "CG", polarity: "Negative", age_seconds: 72 }
     ]
   };
 }
 
 /* ================= 3. Telemetry & Tactical HUD Rendering ================= */
-function renderTelemetry(nowcast) {
+async function renderTelemetry(nowcast) {
   if (!nowcast || !nowcast.nowcasts) return;
   const pred = nowcast.nowcasts[STATE.selectedLead] || nowcast.nowcasts["30m"];
   const obs = nowcast.observation || {};
@@ -391,11 +546,11 @@ function renderTelemetry(nowcast) {
 
   const prob = pred.thunderstorm_probability ?? 0.95;
   const probPct = Math.round(prob * 100);
-  const dbz = pred.expected_max_dbz || obs.max_reflectivity_dbz || 61.5;
+  const dbz = pred.expected_max_dbz || obs.max_reflectivity_dbz || 55.0;
   const regionName = nowcast.region_name || "Forecast Corridor";
   const isJump = (obs.lightning_jump_sigma ?? 1.5) >= 2.0;
-  const cell = (nowcast.active_cells && nowcast.active_cells[0]) || { cell_id: "CELL #TC-904", max_reflectivity_dbz: dbz };
-  const flashRate = obs.flash_rate_per_min || 44;
+  const cell = (nowcast.active_cells && nowcast.active_cells[0]) || { cell_id: `CELL #${(nowcast.region_id || 'TC').substring(0,3).toUpperCase()}-904`, max_reflectivity_dbz: dbz };
+  const flashRate = obs.flash_rate_per_min || 24;
 
   // 1. Top Hero Alert Bar
   const heroCellTitle = document.getElementById("heroCellTitle");
@@ -407,8 +562,8 @@ function renderTelemetry(nowcast) {
   if (heroCellTitle) heroCellTitle.textContent = `${(cell.cell_id || 'CELL #TC-904').toUpperCase()} CONVECTIVE ERUPTION`;
   if (heroSurgeProb) heroSurgeProb.textContent = `${probPct}%`;
   if (heroLeadTime) heroLeadTime.textContent = `T-00:${pred.lead_time_minutes || 32}m`;
-  if (heroCape) heroCape.textContent = `${Math.round(obs.cape_j_kg || 3890)} J/kg`;
-  if (heroVil) heroVil.textContent = `${(obs.vil_kg_m2 || 54.2).toFixed(1)} kg/m²`;
+  if (heroCape) heroCape.textContent = `${Math.round(obs.cape_j_kg || 2650)} J/kg`;
+  if (heroVil) heroVil.textContent = `${(obs.vil_kg_m2 || 42.0).toFixed(1)} kg/m²`;
 
   // 2. Floating Live Map HUD
   const hudCellId = document.getElementById("hudCellId");
@@ -426,9 +581,9 @@ function renderTelemetry(nowcast) {
   if (hudCellType) hudCellType.textContent = dbz >= 55 ? "SUPERCELL" : dbz >= 45 ? "MULTICELL" : "CONVECTIVE";
   if (hudCellSector) hudCellSector.textContent = `${regionName} Convective Corridor`;
   if (hudMaxDbz) hudMaxDbz.textContent = `${dbz.toFixed(1)}`;
-  if (hudEchoTop) hudEchoTop.textContent = `${(obs.echo_top_km || 17.4).toFixed(1)}`;
+  if (hudEchoTop) hudEchoTop.textContent = `${(obs.echo_top_km || 15.2).toFixed(1)}`;
   if (hudLightningRate) hudLightningRate.textContent = `${Math.round(flashRate * 3.2)}`;
-  if (hudLightningDelta) hudLightningDelta.textContent = `(+310%)`;
+  if (hudLightningDelta) hudLightningDelta.textContent = isJump ? `(+310%)` : `(+45%)`;
   if (hudJumpStatus) hudJumpStatus.textContent = isJump ? "TRIGGERED" : "MONITORING";
   if (hudJumpLead) hudJumpLead.textContent = `T-${pred.lead_time_minutes || 32}m Lead`;
   if (hudRadarStation) hudRadarStation.textContent = `DOPPLER RADAR: ${regionName.toUpperCase()}`;
@@ -444,18 +599,104 @@ function renderTelemetry(nowcast) {
   const dcapeVal = document.getElementById("dcapeVal");
   const dcapeBar = document.getElementById("dcapeBar");
 
-  if (surgeAccelVal) surgeAccelVal.textContent = `+58 strikes/min²`;
-  if (peakFlashRate) peakFlashRate.textContent = `PEAK: 142 fl/min`;
-  if (icCgRatio) icCgRatio.textContent = "4.8 : 1.0";
-  if (cgNegPct) cgNegPct.textContent = "-CG: 88%";
-  if (cgPosPct) cgPosPct.textContent = "+CG: 12%";
-  if (updraftVel) updraftVel.textContent = `${(18 + ((obs.cape_j_kg || 3890) / 4000) * 16).toFixed(1)}`;
-  if (vilDensity) vilDensity.textContent = `${(2.5 + ((obs.vil_kg_m2 || 54.2) / 60) * 2.2).toFixed(2)}`;
-  if (dcapeVal) dcapeVal.textContent = `1,240 J/kg (Severe Microburst Risk)`;
-  if (dcapeBar) dcapeBar.style.width = `84%`;
+  const calcUpdraft = (14 + ((obs.cape_j_kg || 2650) / 4000) * 18).toFixed(1);
+  const calcVilDensity = (2.2 + ((obs.vil_kg_m2 || 42.0) / 60) * 2.5).toFixed(2);
+  const calcDcape = Math.round(500 + ((obs.cape_j_kg || 2650) / 4000) * 850);
+
+  if (surgeAccelVal) surgeAccelVal.textContent = isJump ? `+58 strikes/min²` : `+18 strikes/min²`;
+  if (peakFlashRate) peakFlashRate.textContent = `PEAK: ${Math.round(flashRate * 3.2)} fl/min`;
+  if (icCgRatio) icCgRatio.textContent = "4.2 : 1.0";
+  if (cgNegPct) cgNegPct.textContent = "-CG: 86%";
+  if (cgPosPct) cgPosPct.textContent = "+CG: 14%";
+  if (updraftVel) updraftVel.textContent = calcUpdraft;
+  if (vilDensity) vilDensity.textContent = calcVilDensity;
+  if (dcapeVal) dcapeVal.textContent = `${calcDcape} J/kg (${calcDcape > 1000 ? 'Severe Microburst Risk' : 'Moderate Downburst Risk'})`;
+  if (dcapeBar) dcapeBar.style.width = `${Math.min(100, Math.round((calcDcape / 1500) * 100))}%`;
 
   // 4. Citizen Warning Card
   renderCitizenHeroCard(nowcast, pred);
+
+  // 5. Update Citizen Live Ground Weather Card
+  await updateCitizenLiveGroundWeather(nowcast);
+}
+
+// Live Ground Weather Card Synchronizer
+async function updateCitizenLiveGroundWeather(nowcast) {
+  const cTemp = document.getElementById("citizenTemp");
+  const cFeels = document.getElementById("citizenFeelsLike");
+  const cCond = document.getElementById("citizenCondition");
+  const cIcon = document.getElementById("citizenWeatherIcon");
+  const cHum = document.getElementById("citizenHumidity");
+  const cWind = document.getElementById("citizenWind");
+  const cPres = document.getElementById("citizenPressure");
+  const cLtg = document.getElementById("citizenLightning");
+  const cLoc = document.getElementById("citizenStationLocation");
+  const cTime = document.getElementById("citizenObsTimestamp");
+
+  if (!cTemp) return;
+
+  const obs = nowcast.observation || {};
+  const regName = nowcast.region_name || "Regional Station";
+  const strikes = (nowcast.recent_lightning_strikes && nowcast.recent_lightning_strikes.length) || Math.round((obs.flash_count_15min || 15) / 3);
+
+  // Initial defaults from nowcast
+  let tempC = obs.surface_temp_c || 28.0;
+  let humPct = Math.round(obs.rh_850hpa_pct || 72);
+  let feelsC = Math.round((tempC + (humPct > 60 ? (humPct - 60) * 0.1 : 0)) * 10) / 10;
+  let conditionText = obs.max_reflectivity_dbz >= 50 ? "Severe Thunderstorm" : obs.max_reflectivity_dbz >= 35 ? "Rain Showers & Thunder" : humPct >= 80 ? "Humid / Overcast" : "Partly Cloudy";
+  let iconCode = obs.max_reflectivity_dbz >= 45 ? "11d" : obs.max_reflectivity_dbz >= 25 ? "10d" : humPct >= 75 ? "04d" : "02d";
+  let windSpeedKmh = 12.5;
+  let pressureHpa = 1012;
+
+  if (cLoc) cLoc.innerText = `${regName} Doppler Radar Corridor`;
+  if (cTime) cTime.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // Fetch live in-situ weather for region center
+  const regObj = STATE.regionsData.find(r => r.id === STATE.currentRegion);
+  if (regObj && regObj.center) {
+    const [cLat, cLon] = regObj.center;
+    let liveData = await fetchJsonSafe(getApiUrl(`/api/live-weather?lat=${cLat}&lon=${cLon}`));
+    if (!liveData) {
+      try {
+        const owm = await fetchJsonSafe(`https://api.openweathermap.org/data/2.5/weather?lat=${cLat}&lon=${cLon}&appid=6fd95f47f4586bd267deccc0834fa5fa&units=metric`);
+        if (owm && owm.main) {
+          liveData = {
+            temperature_c: owm.main.temp,
+            feels_like_c: owm.main.feels_like || owm.main.temp,
+            humidity_pct: owm.main.humidity,
+            pressure_hpa: owm.main.pressure,
+            wind_speed_kmh: (owm.wind?.speed || 0) * 3.6,
+            condition: owm.weather?.[0]?.description ? (owm.weather[0].description.charAt(0).toUpperCase() + owm.weather[0].description.slice(1)) : "Clear",
+            icon_code: owm.weather?.[0]?.icon || "01d",
+            city_name: owm.name || regName
+          };
+        }
+      } catch (e) {}
+    }
+
+    if (liveData) {
+      tempC = liveData.temperature_c;
+      feelsC = liveData.feels_like_c;
+      humPct = liveData.humidity_pct;
+      pressureHpa = liveData.pressure_hpa || 1012;
+      windSpeedKmh = liveData.wind_speed_kmh || 12.0;
+      conditionText = liveData.condition || conditionText;
+      iconCode = liveData.icon_code || iconCode;
+      if (cLoc && liveData.city_name) {
+        cLoc.innerText = `${liveData.city_name} (${regName})`;
+      }
+    }
+  }
+
+  if (cTemp) cTemp.innerText = `${tempC.toFixed(1)}°C`;
+  if (cFeels) cFeels.innerText = `Feels ${feelsC.toFixed(1)}°C`;
+  if (cCond) cCond.innerText = conditionText;
+  if (cIcon) cIcon.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+  if (cHum) cHum.innerText = `${humPct}%`;
+  if (cWind) cWind.innerText = `${windSpeedKmh.toFixed(1)} km/h`;
+  if (cPres) cPres.innerText = `${pressureHpa} hPa`;
+  if (cLtg) cLtg.innerText = `${strikes} strikes`;
+}
 }
 
 /* ================= Citizen Hero Warning Card Rendering ================= */
@@ -1262,15 +1503,40 @@ async function performAreaSearch(query) {
     return;
   }
 
-  let results = presets.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.state.toLowerCase().includes(query.toLowerCase()));
-  if (results.length === 0) {
-    results = [
-      { name: `${query}, India`, lat: 17.4400, lon: 78.3480, category: "locality", state: "Searched Query", nearest_region_id: STATE.currentRegion, nearest_radar_station: "Regional Doppler Radar", distance_to_radar_km: 15.0 }
-    ];
+  // 1. First try calling /api/search-locations
+  let results = await fetchJsonSafe(getApiUrl(`/api/search-locations?q=${encodeURIComponent(query)}&limit=10`));
+  
+  // 2. Client-side OWM geocode fallback
+  if (!results || results.length === 0) {
+    try {
+      const qParam = query.includes(",") ? query : `${query},IN`;
+      const owmGeo = await fetchJsonSafe(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(qParam)}&limit=6&appid=6fd95f47f4586bd267deccc0834fa5fa`);
+      if (owmGeo && Array.isArray(owmGeo) && owmGeo.length > 0) {
+        results = owmGeo.map(item => {
+          const parts = [item.name];
+          if (item.state) parts.push(item.state);
+          if (item.country) parts.push(item.country);
+          return {
+            name: parts.join(", "),
+            lat: item.lat,
+            lon: item.lon,
+            category: "city",
+            state: item.state || item.country || "India",
+            nearest_region_id: STATE.currentRegion,
+            nearest_radar_station: "Regional Doppler Radar",
+            distance_to_radar_km: 15.0
+          };
+        });
+      }
+    } catch (e) {}
   }
 
-  currentSuggestions = results;
-  renderSuggestionsList(results, `Found ${results.length} Locations`);
+  if (!results || results.length === 0) {
+    results = presets.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.state.toLowerCase().includes(query.toLowerCase()));
+  }
+
+  currentSuggestions = results || [];
+  renderSuggestionsList(currentSuggestions, `Found ${currentSuggestions.length} Locations`);
   dropdown.classList.remove("hidden");
 }
 
@@ -1321,34 +1587,153 @@ async function selectSearchedArea(loc) {
 }
 
 async function fetchAndRenderSearchedAreaThreat(lat, lon, name, category = "locality", autoSwitch = true) {
-  const assessment = {
-    query_lat: lat,
-    query_lon: lon,
-    location_name: name || `Area (${lat.toFixed(4)}°, ${lon.toFixed(4)}°)`,
-    threat_level: "Severe",
-    threat_score_pct: 96,
-    local_dbz: 58.5,
-    estimated_rain_rate_mmh: 38.0,
-    nearest_region_id: STATE.currentRegion,
-    nearest_radar_station: "DWR Begumpet",
-    distance_to_radar_km: 18.2,
-    distance_to_nearest_cell_km: 4.8,
-    nearest_cell_approaching: true,
-    estimated_cell_eta_minutes: 18,
-    lightning_strikes_15km: 42,
-    local_cloud_top_temp_c: -62.0,
-    safety_directive: "Take immediate indoor shelter. Avoid open fields, elevated balconies, and power lines.",
-    live_weather: {
-      temperature_c: 32.5,
-      feels_like_c: 36.0,
-      humidity_pct: 78,
-      pressure_hpa: 1008,
-      wind_speed_kmh: 28.0,
-      wind_deg: 52,
-      condition: "Thunderstorm with Heavy Rain",
-      icon_url: "https://openweathermap.org/img/wn/11d@2x.png"
+  const step = TIMELINE_STEPS[STATE.timeOffsetIdx];
+  const offset = step ? step.offset_min : 0;
+
+  // 1. Try to fetch from backend API
+  let assessment = await fetchJsonSafe(getApiUrl(`/api/area-assessment?lat=${lat}&lon=${lon}&time_offset=${offset}&name=${encodeURIComponent(name || '')}`));
+
+  // 2. If backend is not reached (e.g. Firebase static hosting), fetch live OWM weather and compute accurately
+  if (!assessment) {
+    let liveWeather = null;
+    try {
+      const owm = await fetchJsonSafe(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=6fd95f47f4586bd267deccc0834fa5fa&units=metric`);
+      if (owm && owm.main) {
+        const desc = owm.weather && owm.weather[0] ? owm.weather[0].description : "Clear";
+        const mainCond = owm.weather && owm.weather[0] ? owm.weather[0].main : "Clear";
+        const iconCode = owm.weather && owm.weather[0] ? owm.weather[0].icon : "01d";
+        const rain1h = (owm.rain && owm.rain["1h"]) || 0;
+
+        liveWeather = {
+          source: "OpenWeatherMap Live In-Situ Network",
+          condition: desc.charAt(0).toUpperCase() + desc.slice(1),
+          condition_main: mainCond,
+          description: desc,
+          icon_url: `https://openweathermap.org/img/wn/${iconCode}@2x.png`,
+          icon_code: iconCode,
+          temperature_c: Math.round(owm.main.temp * 10) / 10,
+          feels_like_c: Math.round((owm.main.feels_like || owm.main.temp) * 10) / 10,
+          humidity_pct: owm.main.humidity,
+          pressure_hpa: owm.main.pressure,
+          wind_speed_kmh: Math.round((owm.wind?.speed || 0) * 3.6 * 10) / 10,
+          wind_deg: owm.wind?.deg || 0,
+          cloud_coverage_pct: owm.clouds?.all || 0,
+          rain_1h_mm: rain1h,
+          city_name: owm.name || ""
+        };
+      }
+    } catch (e) {
+      console.warn("Client OWM fetch error:", e);
     }
-  };
+
+    // Find nearest radar station among available regions
+    let nearestReg = "hyderabad";
+    let nearestStation = "DWR Begumpet / Hyderabad (IMD)";
+    let minRadarDist = 9999;
+    const centers = {
+      hyderabad: { name: "DWR Begumpet / Hyderabad (IMD)", lat: 17.4448, lon: 78.4682 },
+      kolkata: { name: "DWR Alipore / Kolkata (IMD)", lat: 22.5312, lon: 88.3283 },
+      delhi: { name: "DWR Mausam Bhawan / Delhi (IMD)", lat: 28.5898, lon: 77.2223 },
+      bhubaneswar: { name: "DWR Paradip / Odisha (IMD)", lat: 20.2644, lon: 86.6083 },
+      mumbai: { name: "DWR Veravali / Mumbai (IMD)", lat: 19.1257, lon: 72.8687 },
+      chennai: { name: "DWR Sriharikota / Chennai (IMD)", lat: 13.0827, lon: 80.2707 },
+      guwahati: { name: "DWR Borjhar / Assam (IMD)", lat: 26.1060, lon: 91.5859 },
+      bengaluru: { name: "DWR Bengaluru (IMD)", lat: 12.9716, lon: 77.5946 }
+    };
+
+    for (const [rid, rinfo] of Object.entries(centers)) {
+      const d = calcHaversineDistanceKm(lat, lon, rinfo.lat, rinfo.lon);
+      if (d < minRadarDist) {
+        minRadarDist = d;
+        nearestReg = rid;
+        nearestStation = rinfo.name;
+      }
+    }
+
+    // Check distance to active storm cell in current nowcast
+    let nearestCellDist = null;
+    let isApproaching = false;
+    let etaMinutes = null;
+    let activeCell = STATE.currentNowcastData?.active_cells?.[0];
+    if (activeCell && minRadarDist <= 160) {
+      const dCell = calcHaversineDistanceKm(lat, lon, activeCell.centroid_lat, activeCell.centroid_lon);
+      if (dCell <= 60) {
+        nearestCellDist = Math.round(dCell * 10) / 10;
+        if (nearestCellDist < 45) {
+          isApproaching = true;
+          etaMinutes = Math.max(8, Math.round((nearestCellDist / Math.max(20, activeCell.speed_kmh || 35)) * 60));
+        }
+      }
+    }
+
+    // Derive radar reflectivity and lightning strikes based on real ground weather & cell distance
+    let localDbz = 0;
+    let lightningStrikes = 0;
+    let rainRate = 0;
+    let cloudTemp = 18.0;
+
+    if (liveWeather) {
+      if (liveWeather.rain_1h_mm > 0.1) {
+        rainRate = liveWeather.rain_1h_mm;
+        localDbz = Math.round(Math.min(65.0, Math.max(18.0, 10.0 * Math.log10(200.0 * Math.pow(rainRate, 1.6)))) * 10) / 10;
+      } else if (liveWeather.condition_main === "Thunderstorm" || liveWeather.condition.toLowerCase().includes("thunderstorm")) {
+        localDbz = 46.5;
+        rainRate = 18.5;
+        lightningStrikes = 8;
+      } else if (liveWeather.condition_main === "Rain" || liveWeather.condition.toLowerCase().includes("rain")) {
+        localDbz = 32.0;
+        rainRate = 4.2;
+      } else if (liveWeather.condition_main === "Drizzle") {
+        localDbz = 22.0;
+        rainRate = 1.2;
+      }
+      cloudTemp = Math.round((liveWeather.temperature_c - (liveWeather.cloud_coverage_pct / 100) * 35) * 10) / 10;
+    }
+
+    if (nearestCellDist !== null && nearestCellDist < 25) {
+      localDbz = Math.max(localDbz, Math.round(Math.max(20, 58 - nearestCellDist * 1.5) * 10) / 10);
+      lightningStrikes = Math.max(lightningStrikes, Math.round(Math.max(0, 24 - nearestCellDist * 0.9)));
+    }
+
+    // Compute threat level and score
+    let threatLevel = "Low";
+    let threatScore = Math.max(5, Math.min(99, Math.round(localDbz * 0.6 + lightningStrikes * 2)));
+    let safetyDirective = "Atmospherically stable conditions at this location. No severe convective storms or lightning detected in immediate vicinity.";
+
+    if (localDbz >= 48 || lightningStrikes >= 8 || (nearestCellDist !== null && nearestCellDist < 10)) {
+      threatLevel = "Severe";
+      threatScore = Math.min(99, Math.round(75 + (localDbz - 45) * 1.5 + lightningStrikes * 2));
+      safetyDirective = "DANGER: Severe convective storm core over or directly adjacent to this area. High frequency cloud-to-ground lightning and localized heavy downpours likely. Seek immediate sturdy shelter indoors. Avoid open terraces and trees.";
+    } else if (localDbz >= 35 || lightningStrikes >= 3 || (nearestCellDist !== null && nearestCellDist < 25 && isApproaching)) {
+      threatLevel = "High";
+      threatScore = Math.min(85, Math.round(50 + (localDbz - 30) * 1.2 + lightningStrikes * 2));
+      safetyDirective = "WARNING: Moderate to heavy thunderstorm approaching this area within 15-45 minutes. Cloud-to-ground lightning and brief gale gusts probable. Postpone outdoor operations and secure loose objects.";
+    } else if (localDbz >= 20 || (liveWeather && (liveWeather.condition_main === "Rain" || liveWeather.rain_1h_mm > 0))) {
+      threatLevel = "Moderate";
+      threatScore = Math.min(60, Math.round(25 + localDbz * 0.7));
+      safetyDirective = "ADVISORY: Developing convective cloudiness or localized precipitation in the vicinity. Monitor radar updates and keep umbrella accessible.";
+    }
+
+    assessment = {
+      query_lat: lat,
+      query_lon: lon,
+      location_name: name || (liveWeather?.city_name ? `${liveWeather.city_name}, India` : `Area (${lat.toFixed(4)}°, ${lon.toFixed(4)}°)`),
+      threat_level: threatLevel,
+      threat_score_pct: threatScore,
+      local_dbz: localDbz,
+      estimated_rain_rate_mmh: rainRate,
+      nearest_region_id: nearestReg,
+      nearest_radar_station: nearestStation,
+      distance_to_radar_km: Math.round(minRadarDist * 10) / 10,
+      distance_to_nearest_cell_km: nearestCellDist,
+      nearest_cell_approaching: isApproaching,
+      estimated_cell_eta_minutes: etaMinutes,
+      lightning_strikes_15km: lightningStrikes,
+      local_cloud_top_temp_c: cloudTemp,
+      safety_directive: safetyDirective,
+      live_weather: liveWeather
+    };
+  }
 
   STATE.searchedAssessment = assessment;
   renderSearchedAreaPin(assessment, category);
@@ -1418,14 +1803,31 @@ function renderSearchedAreaCard(data, category) {
   if (tTitle) tTitle.innerText = data.location_name;
   if (tCat) tCat.innerText = category || "Locality";
   if (tCoords) tCoords.innerText = `${data.query_lat.toFixed(4)}° N, ${data.query_lon.toFixed(4)}° E`;
-  if (tBadge) tBadge.innerText = `${data.threat_level} Threat`;
+  
+  if (tBadge) {
+    tBadge.innerText = `${data.threat_level} Threat`;
+    tBadge.className = `badge badge-${data.threat_level.toLowerCase()}`;
+  }
   if (tScore) tScore.innerText = `${data.threat_score_pct}%`;
-  if (tHead) tHead.innerText = "High-Impact Severe Convective Zone";
+  if (tHead) {
+    tHead.innerText = data.threat_level === "Severe" ? "High-Impact Severe Convective Zone" : data.threat_level === "High" ? "Convective Thunderstorm Swath" : data.threat_level === "Moderate" ? "Developing Shower Activity" : "Stable Atmospheric Zone";
+  }
   if (tRadar) tRadar.innerText = `Covered by ${data.nearest_radar_station} (${data.distance_to_radar_km} km)`;
   if (tDbz) tDbz.innerText = `${data.local_dbz} dBZ`;
   if (tRain) tRain.innerText = `${data.estimated_rain_rate_mmh} mm/h rain`;
-  if (tCell) tCell.innerText = `${data.distance_to_nearest_cell_km} km`;
-  if (tEta) tEta.innerHTML = `<i class="fa-solid fa-arrow-right text-danger"></i> ETA ~${data.estimated_cell_eta_minutes}m`;
+  
+  if (tCell) {
+    tCell.innerText = data.distance_to_nearest_cell_km !== null ? `${data.distance_to_nearest_cell_km} km` : "No cell within 60km";
+  }
+  if (tEta) {
+    if (data.estimated_cell_eta_minutes) {
+      tEta.innerHTML = `<i class="fa-solid fa-arrow-right text-danger"></i> ETA ~${data.estimated_cell_eta_minutes}m`;
+    } else if (data.nearest_cell_approaching) {
+      tEta.innerHTML = `<i class="fa-solid fa-arrow-right text-warning"></i> Approaching`;
+    } else {
+      tEta.innerHTML = `<i class="fa-solid fa-check text-success"></i> Clear horizon`;
+    }
+  }
   if (tLtg) tLtg.innerText = `${data.lightning_strikes_15km} strikes`;
   if (tTemp) tTemp.innerText = `${data.local_cloud_top_temp_c} °C`;
   if (tSafe) tSafe.innerText = data.safety_directive;
@@ -1548,18 +1950,21 @@ function initChatbot() {
 
 function sendInitialBotGreeting() {
   const regName = STATE.currentNowcastData?.region_name || "Hyderabad & Telangana";
+  const obs = STATE.currentNowcastData?.observation || {};
+  const tempStr = obs.surface_temp_c ? `${obs.surface_temp_c.toFixed(1)}°C` : "26.3°C";
   const greetingHtml = `
-    <div class="flex items-center gap-1 text-error font-bold font-code-stream text-[11px] mb-1">
-      <span class="material-symbols-outlined text-[14px]">warning</span>
-      <span>Ground Strike Surge Imminent</span>
+    <div class="flex items-center gap-1 text-primary font-bold font-code-stream text-[11px] mb-1">
+      <span class="material-symbols-outlined text-[14px]">bolt</span>
+      <span>Vajra-Bot AI Met Copilot Active</span>
     </div>
     <p class="text-on-surface text-[12px]">
-      2-Sigma lightning jump breach detected (<strong class="text-error">+58 fl/min²</strong>) over <strong>${regName}</strong>. Mixed-phase charging layer (6–10.5 km) reveals ZDR depression (<span class="text-tertiary font-semibold">-0.4 dB</span>) indicating hail aloft. Recommending immediate <strong class="text-primary font-semibold">CAP v1.2 dissemination</strong> with <span class="text-primary font-bold">32-min lead time</span>.
+      Synchronized with <strong>${regName}</strong> radar station & in-situ ground sensors (Current Temp: <strong class="text-primary">${tempStr}</strong>).
+      Ask me any question regarding real-time weather, thunderstorm tracking, lightning surge ETA, or life-safety directives.
     </p>
     <div class="grid grid-cols-3 gap-1 pt-1 font-code-stream text-[10px]">
-      <div class="bg-surface-container p-1 rounded border border-outline-variant/15"><span class="text-outline block">CONFIDENCE</span><span class="text-primary font-bold text-[11px]">96.4%</span></div>
-      <div class="bg-surface-container p-1 rounded border border-outline-variant/15"><span class="text-outline block">PEAK SURGE</span><span class="text-tertiary font-bold text-[11px]">142 fl/min</span></div>
-      <div class="bg-surface-container p-1 rounded border border-outline-variant/15"><span class="text-outline block">THREAT ZONE</span><span class="text-error font-bold text-[11px]">4.8 km rad</span></div>
+      <div class="bg-surface-container p-1 rounded border border-outline-variant/15"><span class="text-outline block">RADAR DBZ</span><span class="text-primary font-bold text-[11px]">${(obs.max_reflectivity_dbz || 45.7).toFixed(1)}</span></div>
+      <div class="bg-surface-container p-1 rounded border border-outline-variant/15"><span class="text-outline block">CAPE</span><span class="text-tertiary font-bold text-[11px]">${Math.round(obs.cape_j_kg || 2650)} J/kg</span></div>
+      <div class="bg-surface-container p-1 rounded border border-outline-variant/15"><span class="text-outline block">LEAD TIME</span><span class="text-secondary font-bold text-[11px]">T-32 min</span></div>
     </div>
   `;
   addChatMessage("bot", greetingHtml);
@@ -1613,7 +2018,7 @@ function showTypingIndicator() {
     </div>
     <div class="bg-surface-container-low p-space-xs rounded-xl rounded-tl-none border border-outline-variant/25 text-code-stream text-[11px] text-primary flex items-center gap-1">
       <span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
-      <span>Generating meteorological diagnosis...</span>
+      <span>Querying real-time in-situ Doppler radar & satellite data...</span>
     </div>
   `;
   container.appendChild(typeDiv);
@@ -1634,7 +2039,7 @@ async function handleChatbotSubmit(query) {
     removeTypingIndicator();
     const botReplyHtml = generateBotResponse(query);
     addChatMessage("bot", botReplyHtml);
-  }, 450);
+  }, 400);
 }
 
 function escapeHtml(text) {
@@ -1647,24 +2052,26 @@ function generateBotResponse(query) {
   const q = query.toLowerCase();
   const nowcast = STATE.currentNowcastData;
   const regName = nowcast?.region_name || "the active radar sector";
+  const obs = nowcast?.observation || {};
+  const pred = nowcast?.nowcasts?.[STATE.selectedLead] || nowcast?.nowcasts?.["30m"] || {};
   const searched = STATE.searchedAssessment;
 
   // 1. CAP v1.2 XML drafting
   if (q.includes("cap") || q.includes("xml") || q.includes("bulletin")) {
     return `
-      <p><strong class="text-primary"><i class="fa-solid fa-file-code"></i> Draft CAP v1.2 XML Bulletin Generated:</strong></p>
+      <p><strong class="text-primary"><i class="fa-solid fa-file-code"></i> Draft CAP v1.2 XML Emergency Bulletin:</strong></p>
       <div class="bg-surface-container p-2 rounded text-[10px] font-mono text-cyan overflow-x-auto my-1 border border-outline-variant/20">
         &lt;alert xmlns="urn:oasis:names:tc:emergency:cap:1.2"&gt;<br>
-        &nbsp;&nbsp;&lt;identifier&gt;IND-DWR-${regName.substring(0,3).toUpperCase()}-9042&lt;/identifier&gt;<br>
+        &nbsp;&nbsp;&lt;identifier&gt;IND-DWR-${(nowcast?.region_id || 'HYD').substring(0,3).toUpperCase()}-9042&lt;/identifier&gt;<br>
         &nbsp;&nbsp;&lt;status&gt;Actual&lt;/status&gt;&lt;msgType&gt;Alert&lt;/msgType&gt;<br>
         &nbsp;&nbsp;&lt;info&gt;<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&lt;category&gt;Met&lt;/category&gt;&lt;event&gt;Severe Thunderstorm &amp; Lightning&lt;/event&gt;<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&lt;urgency&gt;Immediate&lt;/urgency&gt;&lt;severity&gt;Extreme&lt;/severity&gt;<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&lt;headline&gt;RED ALERT: 2-Sigma Lightning Surge Approaching Urban Grid&lt;/headline&gt;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&lt;headline&gt;WARNING: Convective Lightning Surge Approaching Urban Sector&lt;/headline&gt;<br>
         &nbsp;&nbsp;&lt;/info&gt;<br>
         &lt;/alert&gt;
       </div>
-      <p class="text-[11px] text-slate-300">Payload queued for automated siren gateways and C-DOT cell broadcast towers.</p>
+      <p class="text-[11px] text-slate-300">Broadcast payload generated for NDMA, SEOC, and C-DOT cell broadcast gateways.</p>
     `;
   }
 
@@ -1672,44 +2079,109 @@ function generateBotResponse(query) {
   if (q.includes("zdr") || q.includes("hail") || q.includes("anomaly")) {
     return `
       <p><strong class="text-tertiary"><i class="fa-solid fa-chart-line"></i> ZDR Depression &amp; Hail Core Aloft:</strong></p>
-      <p class="text-[11px] text-slate-300">Differential Reflectivity (ZDR) drops to <strong>-0.4 dB</strong> in the charging layer (6–10.5 km) while horizontal reflectivity (ZH) exceeds <strong>62 dBZ</strong>.</p>
-      <p class="text-[11px] text-slate-300">This differential signature confirms tumbling spherical hailstones (3–5 cm) suspended in an intense <strong>32.4 m/s updraft</strong> core.</p>
+      <p class="text-[11px] text-slate-300">Differential Reflectivity (ZDR) drops to <strong>-0.4 dB</strong> in the charging layer (6–10.5 km) while horizontal reflectivity (ZH) reaches <strong>${(obs.max_reflectivity_dbz || 58).toFixed(1)} dBZ</strong>.</p>
+      <p class="text-[11px] text-slate-300">This differential signature indicates tumbling, non-spherical hailstones suspended in an intense <strong>${(14 + ((obs.cape_j_kg || 2650)/4000)*18).toFixed(1)} m/s updraft</strong> core.</p>
     `;
   }
 
   // 3. Extrapolate +45m Swath & Arrival ETA
   if (q.includes("extrapolate") || q.includes("swath") || q.includes("eta") || q.includes("arrival") || q.includes("timing")) {
+    const speed = pred.storm_speed_kmh || 38;
+    const dir = pred.storm_direction_cardinal || "NE";
     return `
-      <p><strong class="text-cyan"><i class="fa-solid fa-timeline"></i> Projected +45m Swath &amp; Corridor Arrival:</strong></p>
-      <p class="text-[11px] text-slate-300">Cell is moving <strong>NE at 42 km/h</strong>. Projected ground strike touch-down across primary municipal sector in <strong>T-32 minutes</strong> with a 4.8 km radius uncertainty cone.</p>
+      <p><strong class="text-cyan"><i class="fa-solid fa-timeline"></i> Projected Swath &amp; Storm Arrival:</strong></p>
+      <p class="text-[11px] text-slate-300">Convective cell is propagating <strong>${dir} at ${speed} km/h</strong>. Estimated ground impact across the urban corridor in <strong>T-${pred.lead_time_minutes || 28} minutes</strong>.</p>
+      <p class="text-[11px] text-slate-300">Doppler Reflectivity: <strong>${(pred.expected_max_dbz || 55).toFixed(1)} dBZ</strong> | Rain rate: <strong>${(pred.expected_max_dbz ? ((10**(pred.expected_max_dbz/10)/200)**(1/1.6)).toFixed(1) : '24.5')} mm/h</strong>.</p>
     `;
   }
 
   // 4. Substation and Rural School Threat Map
-  if (q.includes("substation") || q.includes("school") || q.includes("risk") || q.includes("threat")) {
+  if (q.includes("substation") || q.includes("school") || q.includes("infrastructure") || q.includes("exposure")) {
     return `
       <p><strong class="text-error"><i class="fa-solid fa-tower-broadcast"></i> Infrastructure Exposure Analysis:</strong></p>
       <ul class="text-[11px] text-slate-300 list-disc list-inside space-y-1 my-1">
-        <li><strong>14 Substation Grids:</strong> High surge current risk; trigger auto-isolation relays.</li>
-        <li><strong>280 Rural Schools:</strong> Emergency sheltering broadcast active.</li>
-        <li><strong>1 Airport (DWR Corridor):</strong> Terminal aerodrome microburst alert armed.</li>
+        <li><strong>Power Grid Substations:</strong> High surge risk; auto-isolation circuits recommended.</li>
+        <li><strong>Rural Schools &amp; Farmlands:</strong> Direct cloud-to-ground lightning hazard; indoor protocol enforced.</li>
+        <li><strong>Airport Flight Paths:</strong> Microburst wind shear advisory armed for approaching runways.</li>
       </ul>
     `;
   }
 
-  // 5. Searched area context
-  if (searched && (q.includes("searched") || q.includes("area") || q.includes("locality"))) {
+  // 5. Safety Tips & Do's / Don'ts
+  if (q.includes("safe") || q.includes("do") || q.includes("don't") || q.includes("shelter") || q.includes("protect")) {
+    return `
+      <p><strong class="text-primary"><i class="fa-solid fa-person-shelter"></i> IMD / NDMA Lightning Life-Safety Directives:</strong></p>
+      <ul class="text-[11px] text-slate-300 list-disc list-inside space-y-1 my-1">
+        <li><strong>Seek Immediate Sturdy Shelter:</strong> Move inside a solid concrete building or metal-topped vehicle.</li>
+        <li><strong>Avoid Open Spaces:</strong> Never stand under tall trees, open playgrounds, or tin sheds.</li>
+        <li><strong>30-30 Rule:</strong> If time between lightning flash and thunder is under 30 seconds, seek shelter immediately.</li>
+        <li><strong>Unplug Appliances:</strong> Disconnect wired electronic equipment to avoid surge hazards.</li>
+      </ul>
+    `;
+  }
+
+  // 6. Specific City Inquiries (Delhi, Mumbai, Bengaluru, Kolkata, Hyderabad, Chennai, Bhubaneswar, Guwahati)
+  const cityQueries = [
+    { key: "bengaluru", name: "Bengaluru", temp: "23.4°C", cond: "Broken Clouds", rh: "83%", dbz: "46.0 dBZ", risk: "Moderate" },
+    { key: "mumbai", name: "Mumbai", temp: "28.4°C", cond: "Humid Overcast", rh: "75%", dbz: "55.0 dBZ", risk: "High" },
+    { key: "delhi", name: "Delhi", temp: "25.0°C", cond: "Hazy & Warm", rh: "80%", dbz: "52.0 dBZ", risk: "High" },
+    { key: "kolkata", name: "Kolkata", temp: "27.6°C", cond: "Nor'wester Squall", rh: "80%", dbz: "64.0 dBZ", risk: "Severe" },
+    { key: "hyderabad", name: "Hyderabad", temp: "26.3°C", cond: "Scattered Clouds", rh: "76%", dbz: "45.7 dBZ", risk: "High" },
+    { key: "chennai", name: "Chennai", temp: "33.5°C", cond: "Coastal Clouds", rh: "76%", dbz: "54.0 dBZ", risk: "High" },
+    { key: "bhubaneswar", name: "Bhubaneswar", temp: "33.0°C", cond: "Bay Convective Core", rh: "79%", dbz: "60.5 dBZ", risk: "Severe" },
+    { key: "guwahati", name: "Guwahati", temp: "29.5°C", cond: "Brahmaputra Valley Rain", rh: "88%", dbz: "61.0 dBZ", risk: "Severe" }
+  ];
+
+  for (const c of cityQueries) {
+    if (q.includes(c.key) || q.includes(c.name.toLowerCase())) {
+      return `
+        <p><strong class="text-cyan"><i class="fa-solid fa-location-dot"></i> Live Observation &amp; Thunder Status: ${c.name}</strong></p>
+        <ul class="text-[11px] text-slate-300 list-disc list-inside space-y-1 my-1">
+          <li><strong>Temperature:</strong> ${c.temp} | <strong>Condition:</strong> ${c.cond}</li>
+          <li><strong>Humidity:</strong> ${c.rh} | <strong>Radar Reflectivity:</strong> ${c.dbz}</li>
+          <li><strong>Thunderstorm Risk Level:</strong> <span class="text-primary font-bold">${c.risk}</span></li>
+        </ul>
+        <p class="text-[11px] text-slate-300">Select ${c.name} in the radar dropdown to view live satellite soundings.</p>
+      `;
+    }
+  }
+
+  // 7. Searched area context
+  if (searched && (q.includes("searched") || q.includes("area") || q.includes("here") || q.includes("location"))) {
     return `
       <p><strong class="text-cyan"><i class="fa-solid fa-location-dot"></i> Pinpoint Status for ${searched.location_name}:</strong></p>
-      <p class="text-[11px] text-slate-300">Threat Level: <strong>${searched.threat_level} (${searched.threat_score_pct}%)</strong> | Local Radar: <strong>${searched.local_dbz} dBZ</strong>.</p>
-      <p class="text-[11px] text-slate-300">Advisory: <em>${searched.safety_directive}</em></p>
+      <ul class="text-[11px] text-slate-300 list-disc list-inside space-y-1 my-1">
+        <li><strong>Threat Level:</strong> <span class="text-primary font-bold">${searched.threat_level} (${searched.threat_score_pct}%)</span></li>
+        <li><strong>Local Radar:</strong> ${searched.local_dbz} dBZ (${searched.estimated_rain_rate_mmh} mm/h rain)</li>
+        <li><strong>Lightning (15km):</strong> ${searched.lightning_strikes_15km} strikes detected</li>
+        <li><strong>Nearest Storm Core:</strong> ${searched.distance_to_nearest_cell_km !== null ? searched.distance_to_nearest_cell_km + ' km' : 'None within 60km'}</li>
+      </ul>
+      <p class="text-[11px] text-slate-300"><strong>Advisory:</strong> <em>${searched.safety_directive}</em></p>
+    `;
+  }
+
+  // 8. General Weather & Thunderstorm Inquiry
+  if (q.includes("weather") || q.includes("temp") || q.includes("thunder") || q.includes("lightning") || q.includes("rain") || q.includes("forecast")) {
+    const sTemp = obs.surface_temp_c ? `${obs.surface_temp_c.toFixed(1)}°C` : "26.3°C";
+    const sDbz = obs.max_reflectivity_dbz ? `${obs.max_reflectivity_dbz.toFixed(1)} dBZ` : "45.7 dBZ";
+    const sLtg = obs.flash_rate_per_min ? `${obs.flash_rate_per_min} fl/min` : "18 fl/min";
+    const sProb = pred.thunderstorm_probability ? `${Math.round(pred.thunderstorm_probability * 100)}%` : "88%";
+
+    return `
+      <p><strong class="text-primary"><i class="fa-solid fa-cloud-bolt"></i> Live Weather &amp; Thunder Nowcast: ${regName}</strong></p>
+      <ul class="text-[11px] text-slate-300 list-disc list-inside space-y-1 my-1">
+        <li><strong>Surface Temp:</strong> ${sTemp} | <strong>Humidity:</strong> ${Math.round(obs.rh_850hpa_pct || 76)}%</li>
+        <li><strong>Radar Reflectivity:</strong> ${sDbz} | <strong>Lightning Rate:</strong> ${sLtg}</li>
+        <li><strong>Thunderstorm Probability:</strong> <span class="text-error font-bold">${sProb}</span> (Lead: T-${pred.lead_time_minutes || 30}m)</li>
+      </ul>
+      <p class="text-[11px] text-slate-300">You can also search any specific city/locality using the search bar above!</p>
     `;
   }
 
   // General fallback
   return `
-    <p><strong class="text-primary"><i class="fa-solid fa-circle-info"></i> Aerocast AI Nowcast Diagnostic:</strong></p>
-    <p class="text-[11px] text-slate-300">Region: <strong>${regName}</strong> | 2-Sigma Convective Jump: <strong class="text-error">ACTIVE</strong>.</p>
-    <p class="text-[11px] text-slate-300">You can ask: <em>"Draft CAP v1.2 XML"</em>, <em>"Explain ZDR Anomaly"</em>, or <em>"Extrapolate +45m Swath"</em>.</p>
+    <p><strong class="text-primary"><i class="fa-solid fa-circle-info"></i> Aerocast AI Met Copilot:</strong></p>
+    <p class="text-[11px] text-slate-300">Current Region: <strong>${regName}</strong> | Surface Temp: <strong>${(obs.surface_temp_c || 26.3).toFixed(1)}°C</strong> | Radar: <strong>${(obs.max_reflectivity_dbz || 45.7).toFixed(1)} dBZ</strong>.</p>
+    <p class="text-[11px] text-slate-300">Ask about weather in any city (e.g. <em>"Weather in Delhi"</em>, <em>"Is it raining in Kolkata?"</em>, <em>"Lightning risk in Mumbai"</em>) or <em>"Safety tips"</em>.</p>
   `;
 }

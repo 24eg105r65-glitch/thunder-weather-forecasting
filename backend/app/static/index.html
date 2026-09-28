@@ -301,41 +301,96 @@
         </div>
       </section>
 
-      <!-- ================= CITIZEN HERO WARNING CARD (Simple View) ================= -->
+      <!-- ================= CITIZEN HERO WARNING & LIVE WEATHER (Simple View) ================= -->
       <div class="px-gutter-lg pt-space-md citizen-only">
-        <div class="card citizen-hero-card severe" id="citizenHeroCard">
-          <div class="citizen-status-head">
-            <div class="citizen-status-icon" id="citizenStatusIconBox">
-              <i class="fa-solid fa-triangle-exclamation" id="citizenStatusIcon"></i>
-            </div>
-            <div>
-              <div class="citizen-eta-tag" id="citizenEtaBadge">
-                <i class="fa-regular fa-clock"></i> <span id="citizenEtaText">Storm arriving in ~25 min</span>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-space-md">
+          <!-- Card 1: Citizen Hero Warning (2 cols on large screen) -->
+          <div class="card citizen-hero-card severe lg:col-span-2" id="citizenHeroCard">
+            <div class="citizen-status-head">
+              <div class="citizen-status-icon" id="citizenStatusIconBox">
+                <i class="fa-solid fa-triangle-exclamation" id="citizenStatusIcon"></i>
               </div>
-              <h3 id="citizenStatusTitle">DANGER: Thunderstorm Approaching</h3>
+              <div>
+                <div class="citizen-eta-tag" id="citizenEtaBadge">
+                  <i class="fa-regular fa-clock"></i> <span id="citizenEtaText">Storm arriving in ~25 min</span>
+                </div>
+                <h3 id="citizenStatusTitle">DANGER: Thunderstorm Approaching</h3>
+              </div>
+            </div>
+
+            <p class="citizen-summary-text" id="citizenSummaryText">
+              Severe storm core detected in the forecast area. High probability of dangerous lightning, strong wind gusts, and heavy downpours over the next 30 to 60 minutes.
+            </p>
+
+            <div class="citizen-do-dont-grid">
+              <div class="citizen-directive-col do-col">
+                <div class="directive-head"><i class="fa-solid fa-circle-check"></i> What you should do right now:</div>
+                <ul id="citizenDoList">
+                  <li>Take shelter immediately inside a sturdy, permanent building with solid roof and walls.</li>
+                  <li>Stay away from windows, balconies, plumbing fixtures, and wired electrical appliances.</li>
+                  <li>If driving, pull over safely away from trees, tall structures, and power poles.</li>
+                </ul>
+              </div>
+              <div class="citizen-directive-col dont-col">
+                <div class="directive-head"><i class="fa-solid fa-circle-xmark"></i> What to avoid:</div>
+                <ul id="citizenDontList">
+                  <li>Do NOT seek shelter under isolated trees, metal sheds, open tin structures, or towers.</li>
+                  <li>Do NOT remain in open fields, playgrounds, elevated terraces, or water bodies.</li>
+                  <li>Avoid using plugged-in electronic devices, landline corded phones, and running water taps.</li>
+                </ul>
+              </div>
             </div>
           </div>
 
-          <p class="citizen-summary-text" id="citizenSummaryText">
-            Severe storm core detected in the forecast area. High probability of dangerous lightning, strong wind gusts, and heavy downpours over the next 30 to 60 minutes.
-          </p>
+          <!-- Card 2: Live Ground Weather & In-Situ Station Status -->
+          <div class="card bg-surface-container-lowest p-space-md rounded-xl shadow-xl border border-outline-variant/30 flex flex-col justify-between" id="citizenLiveWeatherCard">
+            <div>
+              <div class="flex items-center justify-between pb-space-xs mb-space-xs border-b border-outline-variant/20">
+                <div class="flex items-center gap-space-xs">
+                  <span class="material-symbols-outlined text-primary text-[20px]">routine</span>
+                  <h4 class="font-headline-sm text-headline-sm font-bold text-on-surface">Live Ground Weather</h4>
+                </div>
+                <span class="bg-primary/15 text-primary text-[10px] font-mono font-bold px-space-xs py-0.5 rounded border border-primary/25" id="citizenWeatherSourceTag">IMD / OWM IN-SITU</span>
+              </div>
+              <p class="text-on-surface-variant font-code-stream text-[11px] mb-space-sm" id="citizenStationLocation">Hyderabad Doppler Radar Corridor</p>
 
-          <div class="citizen-do-dont-grid">
-            <div class="citizen-directive-col do-col">
-              <div class="directive-head"><i class="fa-solid fa-circle-check"></i> What you should do right now:</div>
-              <ul id="citizenDoList">
-                <li>Take shelter immediately inside a sturdy, permanent building with solid roof and walls.</li>
-                <li>Stay away from windows, balconies, plumbing fixtures, and wired electrical appliances.</li>
-                <li>If driving, pull over safely away from trees, tall structures, and power poles.</li>
-              </ul>
+              <!-- Main Temp & Condition Row -->
+              <div class="flex items-center gap-space-sm bg-surface-container-low p-space-sm rounded-lg mb-space-sm border border-outline-variant/20">
+                <img src="https://openweathermap.org/img/wn/04n@2x.png" id="citizenWeatherIcon" class="w-14 h-14 object-contain filter drop-shadow" alt="Weather condition">
+                <div class="flex flex-col">
+                  <div class="flex items-baseline gap-1.5">
+                    <span class="font-data-display text-2xl md:text-3xl font-extrabold text-primary" id="citizenTemp">26.3°C</span>
+                    <span class="text-on-surface-variant text-[11px] font-mono" id="citizenFeelsLike">Feels 26.3°C</span>
+                  </div>
+                  <span class="text-on-surface font-semibold text-[13px]" id="citizenCondition">Broken Clouds</span>
+                </div>
+              </div>
+
+              <!-- Weather Param Grid -->
+              <div class="grid grid-cols-2 gap-space-xs font-label-md text-label-md mb-space-sm">
+                <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                  <span class="text-outline font-code-stream text-[10px] uppercase block"><i class="fa-solid fa-droplet text-secondary"></i> Relative Humidity</span>
+                  <span class="font-data-display text-label-lg font-bold text-on-surface" id="citizenHumidity">76%</span>
+                </div>
+                <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                  <span class="text-outline font-code-stream text-[10px] uppercase block"><i class="fa-solid fa-wind text-primary"></i> Surface Wind</span>
+                  <span class="font-data-display text-label-lg font-bold text-on-surface" id="citizenWind">9.3 km/h</span>
+                </div>
+                <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                  <span class="text-outline font-code-stream text-[10px] uppercase block"><i class="fa-solid fa-gauge text-tertiary"></i> Pressure</span>
+                  <span class="font-data-display text-label-lg font-bold text-on-surface" id="citizenPressure">1012 hPa</span>
+                </div>
+                <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                  <span class="text-outline font-code-stream text-[10px] uppercase block"><i class="fa-solid fa-bolt text-error"></i> Lightning (15km)</span>
+                  <span class="font-data-display text-label-lg font-bold text-error" id="citizenLightning">5 strikes</span>
+                </div>
+              </div>
             </div>
-            <div class="citizen-directive-col dont-col">
-              <div class="directive-head"><i class="fa-solid fa-circle-xmark"></i> What to avoid:</div>
-              <ul id="citizenDontList">
-                <li>Do NOT seek shelter under isolated trees, metal sheds, open tin structures, or towers.</li>
-                <li>Do NOT remain in open fields, playgrounds, elevated terraces, or water bodies.</li>
-                <li>Avoid using plugged-in electronic devices, landline corded phones, and running water taps.</li>
-              </ul>
+
+            <!-- In-Situ Sensor Telemetry Timestamp -->
+            <div class="pt-space-xs text-on-surface-variant font-code-stream text-[10px] flex items-center justify-between border-t border-outline-variant/20">
+              <span>Ground Ingest: <span class="text-primary font-bold">1-Min Interval</span></span>
+              <span class="text-on-surface-variant font-mono" id="citizenObsTimestamp">Live Sync</span>
             </div>
           </div>
         </div>

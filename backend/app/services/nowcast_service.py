@@ -69,8 +69,12 @@ class NowcastService:
         time_offset_min: int = 0
     ) -> Tuple[AtmosphericObservation, np.ndarray, np.ndarray, List[Dict[str, Any]], List[LightningStrike]]:
         """Construct multimodal observation snapshot for a given region and time offset (-60 to +90m)."""
+        from .weather_api_service import fetch_live_weather
+        import math
+
         region = REGIONS.get(region_id, REGIONS["hyderabad"])
         min_lat, min_lon, max_lat, max_lon = region["bounds"]
+        c_lat, c_lon = region.get("center", ((min_lat + max_lat) / 2, (min_lon + max_lon) / 2))
         
         # 1. Generate 2D Radar and Satellite grids
         radar_grid, sat_grid, cells_meta = generate_spatiotemporal_grid(
@@ -96,7 +100,6 @@ class NowcastService:
         )
         
         # 3. Compute derived trends
-        # Simulate cooling rate & flash rate progression
         cooling_rate = -7.5 if time_offset_min <= 15 and max_dbz >= 45.0 else -2.0
         flash_count = len(strikes) * 5
         flash_rate = float(round(flash_count / 15.0, 1))
@@ -105,28 +108,50 @@ class NowcastService:
         past_rates = [max(0.0, flash_rate * 0.2), max(0.0, flash_rate * 0.45), flash_rate]
         is_jump, jump_sigma = evaluate_lightning_jump(past_rates, dt_minutes=5.0)
         
-        # Region-specific thermodynamic environment
-        if region_id == "kolkata":
-            cape = 3250.0
-            cin = 22.0
-            shear = 22.0
-            dew_point = 26.5
-        elif region_id == "delhi":
-            cape = 1850.0
-            cin = 65.0
-            shear = 18.0
-            dew_point = 21.0
-        elif region_id == "bhubaneswar":
-            cape = 2800.0
-            cin = 30.0
-            shear = 16.0
-            dew_point = 25.8
-        else: # hyderabad
-            cape = 2550.0
-            cin = 35.0
-            shear = 19.5
-            dew_point = 24.2
-            
+        # Region-specific baseline thermodynamic environment
+        regional_profiles = {
+            "kolkata": {"cape": 3450.0, "cin": 20.0, "shear": 22.0, "temp": 32.5, "dew": 26.5, "rh": 82.0, "li": -8.2, "k": 39.5},
+            "delhi": {"cape": 1950.0, "cin": 60.0, "shear": 18.0, "temp": 35.0, "dew": 20.5, "rh": 48.0, "li": -4.8, "k": 32.0},
+            "bhubaneswar": {"cape": 2900.0, "cin": 25.0, "shear": 17.5, "temp": 33.0, "dew": 26.0, "rh": 79.0, "li": -7.1, "k": 38.0},
+            "mumbai": {"cape": 2400.0, "cin": 20.0, "shear": 16.0, "temp": 31.0, "dew": 26.5, "rh": 84.0, "li": -6.0, "k": 37.0},
+            "chennai": {"cape": 2700.0, "cin": 30.0, "shear": 15.5, "temp": 33.5, "dew": 25.5, "rh": 76.0, "li": -6.8, "k": 36.5},
+            "guwahati": {"cape": 3100.0, "cin": 15.0, "shear": 20.0, "temp": 29.5, "dew": 25.0, "rh": 88.0, "li": -7.5, "k": 40.0},
+            "bengaluru": {"cape": 1650.0, "cin": 45.0, "shear": 14.0, "temp": 26.5, "dew": 19.5, "rh": 68.0, "li": -4.2, "k": 33.0},
+            "hyderabad": {"cape": 2650.0, "cin": 35.0, "shear": 19.5, "temp": 32.0, "dew": 23.5, "rh": 66.0, "li": -6.2, "k": 36.5}
+        }
+        
+        prof = regional_profiles.get(region_id, regional_profiles["hyderabad"])
+        cape = prof["cape"]
+        cin = prof["cin"]
+        shear = prof["shear"]
+        surface_temp = prof["temp"]
+        dew_point = prof["dew"]
+        rh_pct = prof["rh"]
+        lifted_idx = prof["li"]
+        k_idx = prof["k"]
+        
+        # 4. Ingest real-time in situ observations from OpenWeatherMap if available
+        try:
+            live = fetch_live_weather(c_lat, c_lon)
+            if live and "temperature_c" in live:
+                surface_temp = live["temperature_c"]
+                rh_pct = float(live.get("humidity_pct", rh_pct))
+                # Magnus formula for accurate dew point calculation
+                a = 17.27
+                b = 237.7
+                gamma = (a * surface_temp) / (b + surface_temp) + math.log(max(0.01, rh_pct / 100.0))
+                dew_point = round((b * gamma) / (a - gamma), 1)
+                
+                # Check for active live precipitation
+                if live.get("rain_1h_mm", 0) > 0.5:
+                    max_dbz = max(max_dbz, min(65.0, 10.0 * math.log10(200.0 * (live["rain_1h_mm"] ** 1.6))))
+                if "thunderstorm" in (live.get("condition") or "").lower():
+                    flash_rate = max(flash_rate, 24.0)
+                    flash_count = max(flash_count, 60)
+                    jump_sigma = max(jump_sigma, 2.2)
+        except Exception as e:
+            print(f"[Synoptic live weather ingest error] {e}")
+
         now = datetime.now(timezone.utc) + timedelta(minutes=time_offset_min)
         
         obs = AtmosphericObservation(
@@ -148,12 +173,12 @@ class NowcastService:
             cg_ratio=0.32,
             cape_j_kg=cape,
             cin_j_kg=cin,
-            lifted_index=-5.8,
-            k_index=36.5,
-            surface_temp_c=34.5,
-            dew_point_c=dew_point,
+            lifted_index=lifted_idx,
+            k_index=k_idx,
+            surface_temp_c=round(surface_temp, 1),
+            dew_point_c=round(dew_point, 1),
             wind_shear_0_6km_mps=shear,
-            rh_850hpa_pct=78.0
+            rh_850hpa_pct=round(rh_pct, 1)
         )
         
         return obs, radar_grid, sat_grid, cells_meta, strikes
