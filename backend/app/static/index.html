@@ -369,27 +369,37 @@
       <div class="map-wrapper">
         <!-- Floating Layer Control Toolbar -->
         <div class="map-layer-toolbar">
-          <div class="toolbar-title"><i class="fa-solid fa-layer-group"></i> Multi-Sensor Layers</div>
-          <label class="layer-toggle-btn active" id="toggleRadarLayer" title="Toggle Doppler Weather Radar Reflectivity">
-            <input type="checkbox" checked id="chkRadar">
-            <span class="toggle-dot radar-dot"></span> Radar (DWR dBZ)
-          </label>
-          <label class="layer-toggle-btn active" id="toggleSatelliteLayer" title="Toggle INSAT-3D Infrared Cloud Top Temperature">
-            <input type="checkbox" checked id="chkSat">
-            <span class="toggle-dot sat-dot"></span> Satellite (INSAT CTT)
-          </label>
-          <label class="layer-toggle-btn active" id="toggleLightningLayer" title="Toggle Real-Time Cloud-to-Ground & Intra-Cloud Lightning Strikes">
-            <input type="checkbox" checked id="chkLtg">
-            <span class="toggle-dot ltg-dot"></span> Lightning Strikes
-          </label>
-          <label class="layer-toggle-btn active" id="toggleTrackLayer" title="Toggle Projected Storm Motion Trajectory & Uncertainty Cones">
-            <input type="checkbox" checked id="chkTrack">
-            <span class="toggle-dot track-dot"></span> Storm Vector &amp; Cone
-          </label>
-          <label class="layer-toggle-btn active" id="toggleOwmLayer" title="Toggle OpenWeatherMap Live Precipitation & Cloud Radar Layer">
-            <input type="checkbox" checked id="chkOwmPrecip">
-            <span class="toggle-dot owm-dot"></span> Live Rain (OWM)
-          </label>
+          <div class="toolbar-section">
+            <div class="toolbar-title"><i class="fa-solid fa-map-location-dot"></i> Base Map (Google Maps)</div>
+            <select id="baseMapSelect" class="basemap-select" title="Switch Map Background View">
+              <option value="google_hybrid" selected>Google Hybrid (Satellite &amp; Roads)</option>
+              <option value="google_streets">Google Streets (City &amp; Locations)</option>
+              <option value="google_terrain">Google Terrain (Topography)</option>
+              <option value="google_sat">Google Satellite (Imagery Only)</option>
+              <option value="carto_dark">Dark Radar Mode (CartoDB)</option>
+              <option value="osm">OpenStreetMap</option>
+            </select>
+          </div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-section">
+            <div class="toolbar-title"><i class="fa-solid fa-layer-group"></i> Radar Overlays</div>
+            <label class="layer-toggle-btn active" id="toggleRadarLayer" title="Toggle Doppler Weather Radar Reflectivity">
+              <input type="checkbox" checked id="chkRadar">
+              <span class="toggle-dot radar-dot"></span> Radar (DWR dBZ)
+            </label>
+            <label class="layer-toggle-btn active" id="toggleSatelliteLayer" title="Toggle INSAT-3D Infrared Cloud Top Temperature">
+              <input type="checkbox" checked id="chkSat">
+              <span class="toggle-dot sat-dot"></span> Satellite (INSAT CTT)
+            </label>
+            <label class="layer-toggle-btn active" id="toggleLightningLayer" title="Toggle Real-Time Cloud-to-Ground &amp; Intra-Cloud Lightning Strikes">
+              <input type="checkbox" checked id="chkLtg">
+              <span class="toggle-dot ltg-dot"></span> Lightning Strikes
+            </label>
+            <label class="layer-toggle-btn active" id="toggleTrackLayer" title="Toggle Projected Storm Motion Trajectory &amp; Uncertainty Cones">
+              <input type="checkbox" checked id="chkTrack">
+              <span class="toggle-dot track-dot"></span> Storm Vector &amp; Cone
+            </label>
+          </div>
         </div>
 
         <!-- The Leaflet GIS Map Container -->

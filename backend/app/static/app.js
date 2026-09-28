@@ -13,18 +13,18 @@ const STATE = {
   map: null,
   layers: {
     radarCanvas: null,
-    owmTileLayer: null,
     lightningGroup: null,
     stormCellsGroup: null,
     trajectoryGroup: null,
     searchedAreaGroup: null
   },
+  baseTileLayers: {},
+  currentBaseLayer: null,
   layerVisibility: {
     radar: true,
     satellite: true,
     lightning: true,
-    tracking: true,
-    owmPrecip: true
+    tracking: true
   },
   currentNowcastData: null,
   regionsData: [],
@@ -149,18 +149,36 @@ function initMap() {
     attributionControl: false
   });
 
-  // Dark CartoDB base tiles
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-    maxZoom: 18,
-    subdomains: "abcd"
-  }).addTo(STATE.map);
+  // Base map layer configurations (Google Maps & CartoDB)
+  STATE.baseTileLayers = {
+    google_hybrid: L.tileLayer("https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }),
+    google_streets: L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }),
+    google_terrain: L.tileLayer("https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}", {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }),
+    google_sat: L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }),
+    carto_dark: L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 19,
+      subdomains: "abcd"
+    }),
+    osm: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19
+    })
+  };
 
-  // OpenWeatherMap Precipitation Layer (Ground Observation overlay)
-  STATE.layers.owmTileLayer = L.tileLayer("https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=6fd95f47f4586bd267deccc0834fa5fa", {
-    maxZoom: 18,
-    opacity: 0.65,
-    zIndex: 2
-  }).addTo(STATE.map);
+  // Google Maps Hybrid is active by default (satellite with road & city names)
+  STATE.currentBaseLayer = STATE.baseTileLayers.google_hybrid;
+  STATE.currentBaseLayer.addTo(STATE.map);
 
   // Initialize Layer Groups
   STATE.layers.lightningGroup = L.layerGroup().addTo(STATE.map);
@@ -738,9 +756,12 @@ function renderMapOverlays(radarData, nowcast) {
 
     const imageUrl = canvas.toDataURL();
     STATE.layers.radarCanvas = L.imageOverlay(imageUrl, leafletBounds, {
-      opacity: 0.85,
+      opacity: 0.78,
       interactive: false
     }).addTo(STATE.map);
+    if (STATE.layers.radarCanvas.bringToFront) {
+      STATE.layers.radarCanvas.bringToFront();
+    }
   }
 
   // 2. Render Lightning Strikes
@@ -1067,16 +1088,23 @@ function setupEventListeners() {
     if (!e.target.checked) STATE.layers.trajectoryGroup.clearLayers();
     else fetchAndRenderData();
   });
-  document.getElementById("chkOwmPrecip")?.addEventListener("change", (e) => {
-    STATE.layerVisibility.owmPrecip = e.target.checked;
-    if (STATE.layers.owmTileLayer) {
-      if (e.target.checked) {
-        STATE.map.addLayer(STATE.layers.owmTileLayer);
-      } else {
-        STATE.map.removeLayer(STATE.layers.owmTileLayer);
+  // Base Map Layer Selector
+  const baseMapSelect = document.getElementById("baseMapSelect");
+  if (baseMapSelect) {
+    baseMapSelect.addEventListener("change", (e) => {
+      const selected = e.target.value;
+      if (STATE.baseTileLayers && STATE.baseTileLayers[selected]) {
+        if (STATE.currentBaseLayer) {
+          STATE.map.removeLayer(STATE.currentBaseLayer);
+        }
+        STATE.currentBaseLayer = STATE.baseTileLayers[selected];
+        STATE.currentBaseLayer.addTo(STATE.map);
+        if (STATE.layers.radarCanvas && STATE.layers.radarCanvas.bringToFront) {
+          STATE.layers.radarCanvas.bringToFront();
+        }
       }
-    }
-  });
+    });
+  }
 
   // User Guide Modal
   const btnOpenGuide = document.getElementById("btnOpenGuide");
