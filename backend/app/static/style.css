@@ -3899,6 +3899,7 @@ body.mode-expert .expert-only {
 }
 
 /* ================= AI Copilot Widget Minimization & Transitions ================= */
+/* ================= AI Copilot Widget Minimization & Transitions ================= */
 #copilot-widget {
   position: fixed;
   bottom: 20px;
@@ -3914,20 +3915,26 @@ body.mode-expert .expert-only {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #copilot-widget.collapsed {
   height: 52px !important;
   max-height: 52px !important;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  min-height: 52px !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5) !important;
 }
 
-#copilot-widget.collapsed #copilotMessages,
-#copilot-widget.collapsed #copilotChips,
-#copilot-widget.collapsed #copilotForm,
-#copilot-widget.collapsed .bg-surface-container {
+#copilot-widget.collapsed #copilotBodyWrapper {
   display: none !important;
+}
+
+#copilot-widget.collapsed #copilotToggleIcon {
+  transform: rotate(180deg);
+}
+
+#copilotToggleIcon {
+  transition: transform 0.25s ease;
 }
 
 /* ================= Map Search Beacon & Marker Pin ================= */

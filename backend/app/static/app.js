@@ -1474,9 +1474,13 @@ function initChatbot() {
   const btnToggle = document.getElementById("btnToggleCopilotWindow");
   const toggleIcon = document.getElementById("copilotToggleIcon");
   const widget = document.getElementById("copilot-widget");
+  const copilotHeader = document.getElementById("copilotHeader");
+  const bodyWrapper = document.getElementById("copilotBodyWrapper");
 
   // Reset conversation
-  btnReset?.addEventListener("click", () => {
+  btnReset?.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (msgBox) {
       msgBox.innerHTML = "";
       sendInitialBotGreeting();
@@ -1484,24 +1488,43 @@ function initChatbot() {
     }
   });
 
-  // Minimize / Maximize Window Toggle
-  let isMinimized = false;
-  const toggleMinimize = () => {
-    isMinimized = !isMinimized;
-    if (widget) {
-      if (isMinimized) {
-        widget.classList.add("collapsed");
-        if (toggleIcon) toggleIcon.textContent = "keyboard_arrow_up";
-      } else {
-        widget.classList.remove("collapsed");
-        if (toggleIcon) toggleIcon.textContent = "keyboard_arrow_down";
+  // Minimize / Maximize Window Toggle Function
+  function toggleCopilotMinimize(forceState) {
+    if (!widget) return;
+    const isCurrentlyCollapsed = widget.classList.contains("collapsed");
+    const shouldCollapse = typeof forceState === "boolean" ? forceState : !isCurrentlyCollapsed;
+
+    if (shouldCollapse) {
+      widget.classList.add("collapsed");
+      if (bodyWrapper) {
+        bodyWrapper.style.display = "none";
+      }
+      if (toggleIcon) toggleIcon.textContent = "keyboard_arrow_up";
+    } else {
+      widget.classList.remove("collapsed");
+      if (bodyWrapper) {
+        bodyWrapper.style.display = "flex";
+      }
+      if (toggleIcon) toggleIcon.textContent = "keyboard_arrow_down";
+      if (msgBox) {
+        msgBox.scrollTop = msgBox.scrollHeight;
       }
     }
-  };
+  }
 
+  // Toggle button click
   btnToggle?.addEventListener("click", (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    toggleMinimize();
+    toggleCopilotMinimize();
+  });
+
+  // Header click to expand/collapse (ignores reset button click)
+  copilotHeader?.addEventListener("click", (e) => {
+    if (e.target.closest("#btnResetCopilot") || e.target.closest("#btnToggleCopilotWindow")) {
+      return;
+    }
+    toggleCopilotMinimize();
   });
 
   // Suggestion chips
