@@ -697,7 +697,6 @@ async function updateCitizenLiveGroundWeather(nowcast) {
   if (cPres) cPres.innerText = `${pressureHpa} hPa`;
   if (cLtg) cLtg.innerText = `${strikes} strikes`;
 }
-}
 
 /* ================= Citizen Hero Warning Card Rendering ================= */
 function renderCitizenHeroCard(nowcast, pred) {
