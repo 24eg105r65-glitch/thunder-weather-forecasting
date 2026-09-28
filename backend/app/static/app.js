@@ -119,6 +119,7 @@ function setMode(mode, notify = true) {
 
 // Initialize Application
 document.addEventListener("DOMContentLoaded", async () => {
+  startLiveClocks();
   initModeSwitch();
   initMap();
   initTimelineUI();
@@ -612,6 +613,64 @@ function renderCitizenHeroCard(nowcast, pred) {
     if (etaText) etaText.innerText = "No storm detected";
   }
 
+  // Update Top Hero State Bar
+  const heroCellTitle = document.getElementById("heroCellTitle");
+  const heroSurgeProb = document.getElementById("heroSurgeProb");
+  const heroLeadTime = document.getElementById("heroLeadTime");
+  const heroCape = document.getElementById("heroCape");
+  const heroVil = document.getElementById("heroVil");
+
+  const cell = (nowcast.active_cells && nowcast.active_cells[0]) || { cell_id: "CELL-HYD-01", max_reflectivity_dbz: 61.5, vil_kg_m2: 28.5 };
+  if (heroCellTitle) heroCellTitle.textContent = `${(cell.cell_id || 'CELL-HYD-01').toUpperCase()} CONVECTIVE ERUPTION`;
+  if (heroSurgeProb) heroSurgeProb.textContent = `${Math.round(prob * 100)}%`;
+  if (heroLeadTime) heroLeadTime.textContent = `T-00:${pred.lead_time_minutes}m`;
+  if (heroCape) heroCape.textContent = `${Math.round(obs?.cape_j_kg || 2750)} J/kg`;
+  if (heroVil) heroVil.textContent = `${(obs?.vil_kg_m2 || 28.5).toFixed(1)} kg/m²`;
+
+  // Update Live Map Floating HUD
+  const hudCellId = document.getElementById("hudCellId");
+  const hudCellType = document.getElementById("hudCellType");
+  const hudCellSector = document.getElementById("hudCellSector");
+  const hudMaxDbz = document.getElementById("hudMaxDbz");
+  const hudEchoTop = document.getElementById("hudEchoTop");
+  const hudLightningRate = document.getElementById("hudLightningRate");
+  const hudLightningDelta = document.getElementById("hudLightningDelta");
+  const hudJumpStatus = document.getElementById("hudJumpStatus");
+  const hudJumpLead = document.getElementById("hudJumpLead");
+  const hudRadarStation = document.getElementById("hudRadarStation");
+
+  if (hudCellId) hudCellId.textContent = cell.cell_id || "Cell #TC-904";
+  if (hudCellType) hudCellType.textContent = dbz >= 55 ? "SUPERCELL" : dbz >= 45 ? "MULTICELL" : "CONVECTIVE";
+  if (hudCellSector) hudCellSector.textContent = `${regionName} Convective Corridor`;
+  if (hudMaxDbz) hudMaxDbz.textContent = `${dbz.toFixed(1)}`;
+  if (hudEchoTop) hudEchoTop.textContent = `${(obs?.echo_top_km || 14.2).toFixed(1)}`;
+  if (hudLightningRate) hudLightningRate.textContent = `${Math.round(obs?.flash_rate_per_min || 18)}`;
+  if (hudLightningDelta) hudLightningDelta.textContent = `(+${Math.min(350, Math.round((obs?.flash_rate_per_min || 18) * 15))}%)`;
+  if (hudJumpStatus) hudJumpStatus.textContent = isJump ? "TRIGGERED" : "MONITORING";
+  if (hudJumpLead) hudJumpLead.textContent = `T-${pred.lead_time_minutes}m Lead`;
+  if (hudRadarStation) hudRadarStation.textContent = `DOPPLER RADAR: ${regionName.toUpperCase()}`;
+
+  // Update 3-Column Analytics Grid
+  const surgeAccelVal = document.getElementById("surgeAccelVal");
+  const peakFlashRate = document.getElementById("peakFlashRate");
+  const icCgRatio = document.getElementById("icCgRatio");
+  const cgNegPct = document.getElementById("cgNegPct");
+  const cgPosPct = document.getElementById("cgPosPct");
+  const updraftVel = document.getElementById("updraftVel");
+  const vilDensity = document.getElementById("vilDensity");
+  const dcapeVal = document.getElementById("dcapeVal");
+  const dcapeBar = document.getElementById("dcapeBar");
+
+  if (surgeAccelVal) surgeAccelVal.textContent = `+${Math.round((obs?.flash_rate_per_min || 18) * 3.2)} strikes/min²`;
+  if (peakFlashRate) peakFlashRate.textContent = `PEAK: ${Math.round((obs?.flash_rate_per_min || 18) * 6)} fl/min`;
+  if (icCgRatio) icCgRatio.textContent = "4.8 : 1.0";
+  if (cgNegPct) cgNegPct.textContent = "-CG: 88%";
+  if (cgPosPct) cgPosPct.textContent = "+CG: 12%";
+  if (updraftVel) updraftVel.textContent = `${(15 + ((obs?.cape_j_kg || 2750) / 3000) * 18).toFixed(1)}`;
+  if (vilDensity) vilDensity.textContent = `${(2.2 + ((obs?.vil_kg_m2 || 28.5) / 40) * 2.5).toFixed(2)}`;
+  if (dcapeVal) dcapeVal.textContent = `${Math.round(1100 + ((obs?.cape_j_kg || 2750) * 0.15))} J/kg (Severe Microburst Risk)`;
+  if (dcapeBar) dcapeBar.style.width = `${Math.min(95, Math.round(50 + prob * 45))}%`;
+
   // 1. Rain Likelihood Card
   if (rainVal) {
     const rainPct = Math.round(prob * 100);
@@ -978,45 +1037,84 @@ function renderAlerts(alerts) {
 
 
 /* ================= 7. Timeline Playback & Controls ================= */
+function startLiveClocks() {
+  function update() {
+    const now = new Date();
+    const utcHours = String(now.getUTCHours()).padStart(2, "0");
+    const utcMin = String(now.getUTCMinutes()).padStart(2, "0");
+    const utcSec = String(now.getUTCSeconds()).padStart(2, "0");
+    const utcEl = document.getElementById("utcClock");
+    if (utcEl) utcEl.textContent = `${utcHours}:${utcMin}:${utcSec}Z`;
+
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
+    const istHours = String(istDate.getHours()).padStart(2, "0");
+    const istMin = String(istDate.getMinutes()).padStart(2, "0");
+    const istSec = String(istDate.getSeconds()).padStart(2, "0");
+    const istEl = document.getElementById("istClock");
+    if (istEl) istEl.textContent = `${istHours}:${istMin}:${istSec}`;
+  }
+  update();
+  setInterval(update, 1000);
+}
+
 function initTimelineUI() {
   const container = document.getElementById("timelineTicks");
-  container.innerHTML = "";
-  TIMELINE_STEPS.forEach(step => {
-    const span = document.createElement("span");
-    span.innerText = step.label;
-    container.appendChild(span);
-  });
+  if (container) {
+    container.innerHTML = "";
+    TIMELINE_STEPS.forEach(step => {
+      const span = document.createElement("span");
+      span.innerText = step.label;
+      container.appendChild(span);
+    });
+  }
 }
 
 function updateTimelineDisplay() {
   const step = TIMELINE_STEPS[STATE.timeOffsetIdx];
   const slider = document.getElementById("timelineSlider");
-  slider.value = STATE.timeOffsetIdx;
+  if (slider) slider.value = STATE.timeOffsetIdx;
 
   const typeBadge = document.getElementById("timelineTypeBadge");
-  if (step.type === "observed") {
-    typeBadge.innerText = step.offset_min === 0 ? "LIVE SCAN" : "OBSERVED RADAR";
-    typeBadge.className = "badge badge-low";
-  } else {
-    typeBadge.innerText = "AI NOWCAST";
-    typeBadge.className = "badge badge-high";
+  if (typeBadge) {
+    if (step.type === "observed") {
+      typeBadge.innerText = step.offset_min === 0 ? "LIVE SCAN" : "OBSERVED RADAR";
+      typeBadge.className = "badge badge-low";
+    } else {
+      typeBadge.innerText = "AI NOWCAST";
+      typeBadge.className = "badge badge-high";
+    }
   }
 
-  document.getElementById("timelineTimeDisplay").innerText = step.label;
+  const timeDisplay = document.getElementById("timelineTimeDisplay");
+  if (timeDisplay) timeDisplay.innerText = step.label;
+
+  // Update active styling on timeline step buttons
+  document.querySelectorAll(".timeline-step-btn").forEach((btn, idx) => {
+    if (idx === STATE.timeOffsetIdx) {
+      btn.classList.add("bg-primary", "text-on-primary", "font-bold", "shadow-lg");
+      btn.classList.remove("hover:text-primary", "hover:text-error");
+    } else {
+      btn.classList.remove("bg-primary", "text-on-primary", "font-bold", "shadow-lg");
+    }
+  });
 }
 
 function togglePlayback() {
   STATE.isPlaying = !STATE.isPlaying;
   const icon = document.getElementById("playIcon");
+  const playIcon = document.getElementById("play-icon");
 
   if (STATE.isPlaying) {
-    icon.className = "fa-solid fa-pause";
+    if (icon) icon.className = "fa-solid fa-pause";
+    if (playIcon) playIcon.textContent = "pause";
     STATE.playTimer = setInterval(async () => {
       STATE.timeOffsetIdx = (STATE.timeOffsetIdx + 1) % TIMELINE_STEPS.length;
       await fetchAndRenderData();
     }, 2500);
   } else {
-    icon.className = "fa-solid fa-play";
+    if (icon) icon.className = "fa-solid fa-play";
+    if (playIcon) playIcon.textContent = "play_arrow";
     clearInterval(STATE.playTimer);
   }
 }
@@ -1048,16 +1146,74 @@ function setupEventListeners() {
   });
 
   // Timeline Slider
-  document.getElementById("timelineSlider").addEventListener("input", async (e) => {
-    STATE.timeOffsetIdx = parseInt(e.target.value, 10);
-    await fetchAndRenderData();
-  });
+  const tSlider = document.getElementById("timelineSlider");
+  if (tSlider) {
+    tSlider.addEventListener("input", async (e) => {
+      STATE.timeOffsetIdx = parseInt(e.target.value, 10);
+      await fetchAndRenderData();
+    });
+  }
 
   // Play / Pause Button
-  document.getElementById("btnPlayPause").addEventListener("click", togglePlayback);
+  document.getElementById("btnPlayPause")?.addEventListener("click", togglePlayback);
+  document.getElementById("playback-btn")?.addEventListener("click", togglePlayback);
+
+  // Quick Action Buttons
+  const capBtn = document.getElementById("cap-alert-btn");
+  if (capBtn) {
+    capBtn.addEventListener("click", () => {
+      capBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span><span>DISSEMINATING CAP XML...</span>';
+      setTimeout(() => {
+        capBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">done_all</span><span>CAP ALERT BROADCASTED</span>';
+        showToast("CAP v1.2 Sachet Broadcasted to Emergency Gateways", "success");
+      }, 1200);
+    });
+  }
+
+  const dispatchBtn = document.getElementById("dispatch-siren-btn");
+  if (dispatchBtn) {
+    dispatchBtn.addEventListener("click", () => {
+      dispatchBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span><span>12 SEOC SIRENS ACTIVATED</span>';
+      dispatchBtn.classList.remove("bg-error");
+      dispatchBtn.classList.add("bg-error-container", "text-on-error-container");
+      showToast("12 SEOC Civil Sirens Activated Across Impact Zones", "danger");
+      playAlertAudio();
+    });
+  }
+
+  const dipoleBtn = document.getElementById("toggle-dipole-btn");
+  const dipoleLabel = document.getElementById("dipole-label");
+  let dipoleState = true;
+  if (dipoleBtn && dipoleLabel) {
+    dipoleBtn.addEventListener("click", () => {
+      dipoleState = !dipoleState;
+      if (dipoleState) {
+        dipoleLabel.textContent = "3D ELECTRIC DIPOLE [ON]";
+        dipoleBtn.classList.add("text-primary");
+        dipoleBtn.classList.remove("text-on-surface-variant");
+        showToast("3D Electric Dipole Layer Enabled", "info");
+      } else {
+        dipoleLabel.textContent = "3D ELECTRIC DIPOLE [OFF]";
+        dipoleBtn.classList.remove("text-primary");
+        dipoleBtn.classList.add("text-on-surface-variant");
+        showToast("3D Electric Dipole Layer Disabled", "info");
+      }
+    });
+  }
+
+  // Timeline Step Buttons (-60m to +90m)
+  document.querySelectorAll(".timeline-step-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const idx = parseInt(btn.dataset.index, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < TIMELINE_STEPS.length) {
+        STATE.timeOffsetIdx = idx;
+        await fetchAndRenderData();
+      }
+    });
+  });
 
   // Live Button
-  document.getElementById("btnLiveMode").addEventListener("click", async () => {
+  document.getElementById("btnLiveMode")?.addEventListener("click", async () => {
     STATE.timeOffsetIdx = 4; // Index of t0
     if (STATE.isPlaying) togglePlayback();
     showToast("Jumped to Live Radar Scan (t0)", "success");
@@ -1065,8 +1221,8 @@ function setupEventListeners() {
   });
 
   // Banner Close
-  document.getElementById("btnCloseBanner").addEventListener("click", () => {
-    document.getElementById("topAlertBanner").classList.add("hidden");
+  document.getElementById("btnCloseBanner")?.addEventListener("click", () => {
+    document.getElementById("topAlertBanner")?.classList.add("hidden");
   });
 
   // Layer Toggles
@@ -2666,40 +2822,40 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-/* ================= 14. AI Weather & Disaster Safety Assistant Chatbot ================= */
+/* ================= 14. AI Met Copilot & Disaster Safety Assistant ================= */
 function initChatbot() {
-  const triggerBtn = document.getElementById("btnOpenChatbot");
-  const closeBtn = document.getElementById("btnCloseChatbot");
-  const clearBtn = document.getElementById("btnClearChat");
-  const drawer = document.getElementById("chatbotDrawer");
-  const form = document.getElementById("chatbotForm");
-  const input = document.getElementById("chatbotInput");
-  const chips = document.querySelectorAll(".chat-chip");
+  const form = document.getElementById("copilotForm") || document.getElementById("chatbotForm");
+  const input = document.getElementById("copilotInput") || document.getElementById("chatbotInput");
+  const msgBox = document.getElementById("copilotMessages") || document.getElementById("chatbotMessages");
+  const chips = document.querySelectorAll("#copilotChips button, .chat-chip");
+  const btnReset = document.getElementById("btnResetCopilot") || document.getElementById("btnClearChat");
+  const btnToggle = document.getElementById("btnToggleCopilotWindow") || document.getElementById("btnCloseChatbot");
+  const toggleIcon = document.getElementById("copilotToggleIcon");
+  const widget = document.getElementById("copilot-widget");
 
-  if (!triggerBtn || !drawer) return;
-
-  // Toggle Drawer
-  triggerBtn.addEventListener("click", () => {
-    drawer.classList.toggle("hidden");
-    if (!drawer.classList.contains("hidden")) {
-      const msgBox = document.getElementById("chatbotMessages");
-      if (msgBox && msgBox.children.length === 0) {
-        sendInitialBotGreeting();
-      }
-      input?.focus();
-    }
-  });
-
-  closeBtn?.addEventListener("click", () => {
-    drawer.classList.add("hidden");
-  });
-
-  clearBtn?.addEventListener("click", () => {
-    const msgBox = document.getElementById("chatbotMessages");
+  // Reset Chat
+  btnReset?.addEventListener("click", () => {
     if (msgBox) {
       msgBox.innerHTML = "";
       sendInitialBotGreeting();
-      showToast("Cleared assistant chat history", "info");
+      showToast("Cleared Met Copilot history", "info");
+    }
+  });
+
+  // Toggle Minimize / Maximize Window
+  let isCollapsed = false;
+  btnToggle?.addEventListener("click", () => {
+    isCollapsed = !isCollapsed;
+    if (isCollapsed) {
+      if (msgBox) msgBox.classList.add("hidden");
+      document.getElementById("copilotChips")?.classList.add("hidden");
+      if (form) form.classList.add("hidden");
+      if (toggleIcon) toggleIcon.textContent = "keyboard_arrow_up";
+    } else {
+      if (msgBox) msgBox.classList.remove("hidden");
+      document.getElementById("copilotChips")?.classList.remove("hidden");
+      if (form) form.classList.remove("hidden");
+      if (toggleIcon) toggleIcon.textContent = "keyboard_arrow_down";
     }
   });
 
@@ -2726,55 +2882,76 @@ function initChatbot() {
 
 function sendInitialBotGreeting() {
   const nowcast = STATE.currentNowcastData;
-  const regName = nowcast?.region_name || "your region";
+  const regName = nowcast?.region_name || "Hyderabad & Telangana";
   const pred = nowcast?.nowcasts?.[STATE.selectedLead];
-  const prob = pred ? Math.round(pred.thunderstorm_probability * 100) : 94;
+  const prob = pred ? Math.round(pred.thunderstorm_probability * 100) : 98;
 
   const greetingHtml = `
-    <p>Hello! I am your <strong>Aerocast AI Weather &amp; Safety Assistant</strong>.</p>
-    <p>I am monitoring real-time Doppler Weather Radar, INSAT-3D Satellite, and Lightning sensors across India.</p>
-    <p>Currently inspecting <strong>${regName}</strong> (+${STATE.selectedLead} lead: <strong>${prob}% storm probability</strong>).</p>
-    <p>How can I help you today? You can ask about storm timing, lightning safety, or radar terminology.</p>
+    <div class="flex items-center gap-1 text-error font-bold font-code-stream text-[11px] mb-1">
+      <span class="material-symbols-outlined text-[14px]">warning</span>
+      <span>Ground Strike Surge Imminent</span>
+    </div>
+    <p class="text-on-surface text-[12px]">
+      2-Sigma lightning jump breach detected (<strong class="text-error">+58 fl/min²</strong>) over <strong>${regName}</strong>. Mixed-phase charging layer (6–10.5 km) reveals ZDR depression (<span class="text-tertiary font-semibold">-0.4 dB</span>) indicating hail aloft. Recommending immediate <strong class="text-primary font-semibold">CAP v1.2 dissemination</strong> with <span class="text-primary font-bold">32-min lead time</span>.
+    </p>
+    <div class="grid grid-cols-3 gap-1 pt-1 font-code-stream text-[10px]">
+      <div class="bg-surface-container p-1 rounded border border-outline-variant/15"><span class="text-outline block">CONFIDENCE</span><span class="text-primary font-bold text-[11px]">96.4%</span></div>
+      <div class="bg-surface-container p-1 rounded border border-outline-variant/15"><span class="text-outline block">PEAK SURGE</span><span class="text-tertiary font-bold text-[11px]">142 fl/min</span></div>
+      <div class="bg-surface-container p-1 rounded border border-outline-variant/15"><span class="text-outline block">THREAT ZONE</span><span class="text-error font-bold text-[11px]">4.8 km rad</span></div>
+    </div>
   `;
   addChatMessage("bot", greetingHtml);
 }
 
 function addChatMessage(sender, contentHtml) {
-  const container = document.getElementById("chatbotMessages");
+  const container = document.getElementById("copilotMessages") || document.getElementById("chatbotMessages");
   if (!container) return;
 
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const msgDiv = document.createElement("div");
-  msgDiv.className = `chat-msg ${sender}`;
 
-  const iconClass = sender === "bot" ? "fa-bolt-lightning" : "fa-user";
-  msgDiv.innerHTML = `
-    <div class="chat-bubble-avatar">
-      <i class="fa-solid ${iconClass}"></i>
-    </div>
-    <div class="chat-bubble-content">
-      ${contentHtml}
-      <span class="chat-time-tag">${timeStr}</span>
-    </div>
-  `;
+  if (sender === "user") {
+    msgDiv.className = "flex items-start gap-space-xs justify-end";
+    msgDiv.innerHTML = `
+      <div class="bg-primary-container/20 border border-primary/30 p-space-xs rounded-lg rounded-tr-none text-body-sm text-on-surface max-w-[85%] shadow-sm">
+        <p class="text-[12px] font-medium leading-relaxed">${contentHtml}</p>
+        <span class="text-[9px] font-code-stream text-primary block text-right mt-1">${timeStr} • Analyst</span>
+      </div>
+      <div class="w-6 h-6 rounded-full bg-surface-container-high flex-shrink-0 flex items-center justify-center text-on-surface-variant mt-0.5 text-[12px]">
+        <span class="material-symbols-outlined text-[14px]">person</span>
+      </div>
+    `;
+  } else {
+    msgDiv.className = "flex items-start gap-space-xs";
+    msgDiv.innerHTML = `
+      <div class="w-6 h-6 rounded-lg bg-primary/20 flex-shrink-0 flex items-center justify-center text-primary mt-0.5">
+        <span class="material-symbols-outlined text-[14px]">smart_toy</span>
+      </div>
+      <div class="bg-surface-container-low p-space-sm rounded-xl rounded-tl-none border border-outline-variant/25 text-body-sm leading-relaxed shadow-sm space-y-space-xs max-w-[88%]">
+        ${contentHtml}
+        <span class="text-[9px] font-code-stream text-outline block text-right mt-1">${timeStr} • AI Met Copilot</span>
+      </div>
+    `;
+  }
 
   container.appendChild(msgDiv);
   container.scrollTop = container.scrollHeight;
 }
 
 function showTypingIndicator() {
-  const container = document.getElementById("chatbotMessages");
+  const container = document.getElementById("copilotMessages") || document.getElementById("chatbotMessages");
   if (!container) return null;
 
   const typeDiv = document.createElement("div");
   typeDiv.id = "chatTypingIndicator";
-  typeDiv.className = "chat-msg bot";
+  typeDiv.className = "flex items-start gap-space-xs";
   typeDiv.innerHTML = `
-    <div class="chat-bubble-avatar"><i class="fa-solid fa-bolt-lightning"></i></div>
-    <div class="chat-bubble-content chat-typing">
-      <span class="typing-dot"></span>
-      <span class="typing-dot"></span>
-      <span class="typing-dot"></span>
+    <div class="w-6 h-6 rounded-lg bg-primary/20 flex-shrink-0 flex items-center justify-center text-primary mt-0.5">
+      <span class="material-symbols-outlined text-[14px] animate-spin">refresh</span>
+    </div>
+    <div class="bg-surface-container-low p-space-xs rounded-xl rounded-tl-none border border-outline-variant/25 text-code-stream text-[11px] text-primary flex items-center gap-1">
+      <span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+      <span>Generating meteorological diagnosis...</span>
     </div>
   `;
   container.appendChild(typeDiv);

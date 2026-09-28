@@ -1,15 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aerocast-AI | Multimodal Thunderstorm & Lightning Nowcasting Platform</title>
+  <title>AEROCAST-AI // THUNDER-CAST AI - Multimodal Thunderstorm &amp; Lightning Nowcaster</title>
   <meta name="description" content="AI/ML Nowcasting of severe thunderstorms and lightning using Doppler Weather Radar, INSAT-3D Satellite, Lightning detection networks and NWP model data.">
-  
-  <!-- Google Fonts -->
+
+  <!-- Google Fonts: Plus Jakarta Sans, JetBrains Mono, Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Material Symbols Outlined -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -17,627 +20,1024 @@
   <!-- Leaflet GIS CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   
-  <!-- Custom CSS -->
+  <!-- Tailwind CSS CDN with custom config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-secondary-fixed-variant": "#6900b3",
+            "on-tertiary-container": "#613b00",
+            "tertiary-container": "#f59e0b",
+            "secondary": "#38bdf8",
+            "secondary-fixed": "#c4e7ff",
+            "primary-fixed": "#c4e7ff",
+            "on-error": "#ffffff",
+            "secondary-container": "#0284c7",
+            "on-primary-fixed-variant": "#004c69",
+            "on-tertiary": "#472a00",
+            "surface-container": "#1c2027",
+            "surface-container-high": "#262a32",
+            "surface-tint": "#7bd0ff",
+            "on-secondary-container": "#bae6fd",
+            "tertiary-fixed": "#ffddb8",
+            "surface-bright": "#353941",
+            "inverse-primary": "#00668a",
+            "surface-container-lowest": "#0a0e15",
+            "surface": "#10131b",
+            "on-surface": "#dfe2ed",
+            "error-container": "#93000a",
+            "outline-variant": "#3e484f",
+            "tertiary-fixed-dim": "#ffb95f",
+            "tertiary": "#ffc174",
+            "outline": "#87929a",
+            "surface-container-highest": "#31353d",
+            "error": "#ef4444",
+            "on-primary-fixed": "#001e2c",
+            "primary-fixed-dim": "#7bd0ff",
+            "surface-container-low": "#181c23",
+            "surface-variant": "#31353d",
+            "on-tertiary-fixed": "#2a1700",
+            "on-surface-variant": "#bdc8d1",
+            "primary": "#38bdf8",
+            "on-primary-container": "#004965",
+            "surface-dim": "#10131b",
+            "on-background": "#dfe2ed",
+            "inverse-on-surface": "#2d3038",
+            "background": "#10131b",
+            "primary-container": "#0284c7",
+            "on-tertiary-fixed-variant": "#653e00",
+            "on-error-container": "#ffdad6",
+            "inverse-surface": "#dfe2ed",
+            "on-primary": "#00354a"
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          spacing: {
+            "gutter-md": "1rem",
+            "space-lg": "1.25rem",
+            "space-xl": "2rem",
+            "space-xs": "0.25rem",
+            "margin-lg": "2rem",
+            "space-sm": "0.5rem",
+            "gutter-lg": "1.5rem",
+            "margin": "1rem",
+            "margin-md": "1.5rem",
+            "space-md": "0.75rem",
+            "gutter": "0.75rem"
+          },
+          fontFamily: {
+            "label-lg": ["JetBrains Mono", "monospace"],
+            "code-stream": ["JetBrains Mono", "monospace"],
+            "body-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg-mobile": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-xl-mobile": ["Plus Jakarta Sans", "sans-serif"],
+            "data-display": ["JetBrains Mono", "monospace"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Plus Jakarta Sans", "sans-serif"],
+            "label-sm": ["JetBrains Mono", "monospace"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "label-md": ["JetBrains Mono", "monospace"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Plus Jakarta Sans", "sans-serif"]
+          },
+          fontSize: {
+            "label-lg": ["14px", { lineHeight: "18px", letterSpacing: "0.02em", fontWeight: "600" }],
+            "code-stream": ["11px", { lineHeight: "16px", fontWeight: "400" }],
+            "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+            "headline-lg-mobile": ["22px", { lineHeight: "30px", letterSpacing: "-0.01em", fontWeight: "700" }],
+            "headline-xl-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "800" }],
+            "data-display": ["32px", { lineHeight: "36px", letterSpacing: "-0.03em", fontWeight: "700" }],
+            "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "label-sm": ["10px", { lineHeight: "14px", letterSpacing: "0.06em", fontWeight: "500" }],
+            "headline-xl": ["40px", { lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "800" }],
+            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.04em", fontWeight: "500" }],
+            "headline-md": ["22px", { lineHeight: "28px", fontWeight: "600" }],
+            "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.015em", fontWeight: "700" }],
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }]
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Custom CSS for Leaflet & Tactical UI Styling -->
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="dark-theme mode-simple">
-  <!-- Top Navigation Bar -->
-  <header class="navbar">
-    <div class="brand-section">
-      <div class="brand-logo">
-        <i class="fa-solid fa-bolt-lightning bolt-glow"></i>
-        <div class="brand-text">
-          <span class="brand-title">AEROCAST<span class="accent-text">-AI</span></span>
-          <span class="brand-subtitle">Multimodal Thunderstorm &amp; Lightning Nowcaster</span>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container mode-simple">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="fixed top-0 w-full z-50 bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.6)] border-b border-outline-variant/30">
+    <div class="h-20 w-full px-gutter-lg flex items-center justify-between gap-space-md">
+      <!-- Brand & Status Unit -->
+      <div class="flex items-center gap-space-md">
+        <div class="flex items-center gap-space-sm bg-surface-container-low px-space-sm py-space-xs rounded-lg border border-outline-variant/25">
+          <span class="material-symbols-outlined text-primary text-[22px] animate-pulse">bolt</span>
+          <div class="flex flex-col">
+            <span class="font-label-lg text-label-lg tracking-wider font-extrabold text-on-surface uppercase">AEROCAST<span class="text-primary">-AI</span></span>
+            <span class="font-code-stream text-[9px] text-on-surface-variant font-medium">THUNDER-CAST NOWCASTER</span>
+          </div>
+          <span class="font-code-stream text-code-stream text-primary bg-surface-container px-space-xs py-space-xs rounded font-bold ml-1">PS-26072</span>
+        </div>
+        <div class="hidden xl:flex items-center gap-space-xs bg-surface-container-low px-space-sm py-space-xs rounded-lg border border-outline-variant/20">
+          <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+          <span class="font-label-sm text-label-sm uppercase text-primary font-bold tracking-widest" id="systemStatusText">ONLINE // SWEEP 0.5° D-POL</span>
         </div>
       </div>
-      <div class="view-mode-pill" id="viewModeToggle">
-        <button class="view-mode-btn active" id="btnCitizenMode" title="Simple Citizen View: plain-English warnings and safety advice">
-          <i class="fa-solid fa-person-shield"></i> Simple View
-        </button>
-        <button class="view-mode-btn" id="btnExpertMode" title="Meteorologist View: Doppler radar soundings, CAPE/CIN, and AI metrics">
-          <i class="fa-solid fa-satellite-dish"></i> Advanced Radar
-        </button>
-      </div>
-      <div class="system-status-badge">
-        <span class="status-dot pulsing"></span>
-        <span id="systemStatusText">OPERATIONAL</span>
-      </div>
-    </div>
 
-    <!-- Center Region, Lead Time Selection & Area Search -->
-    <div class="nav-controls">
-      <!-- Search Specific Area / Locality / Coordinates -->
-      <div class="area-search-container" id="areaSearchContainer">
-        <div class="area-search-input-wrapper">
-          <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input 
-            type="text" 
-            id="areaSearchInput" 
-            class="area-search-input" 
-            placeholder="Search specific area (e.g. Gachibowli, Salt Lake, Dwarka)..."
-            autocomplete="off"
-            spellcheck="false"
-            aria-label="Search geographic area"
-          >
-          <button class="search-clear-btn hidden" id="btnClearSearch" title="Clear Search" aria-label="Clear search query">
-            <i class="fa-solid fa-xmark"></i>
+      <!-- Live Clocks & Alert Banner Pill -->
+      <div class="flex items-center gap-space-md">
+        <div class="hidden 2xl:flex items-center gap-space-sm bg-surface-container-low px-space-md py-space-xs rounded-lg border border-outline-variant/20">
+          <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">UTC</span>
+          <span class="font-data-display text-label-md text-primary font-bold" id="utcClock">14:22:08Z</span>
+          <span class="text-outline-variant font-label-sm">|</span>
+          <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">IST</span>
+          <span class="font-data-display text-label-md text-on-surface font-bold" id="istClock">19:52:08</span>
+        </div>
+
+        <!-- Search Specific Locality / City / Pin -->
+        <div class="area-search-container" id="areaSearchContainer">
+          <div class="area-search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input 
+              type="text" 
+              id="areaSearchInput" 
+              class="area-search-input" 
+              placeholder="Search area (e.g. Gachibowli, Salt Lake, Dwarka)..."
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Search geographic area"
+            >
+            <button class="search-clear-btn hidden" id="btnClearSearch" title="Clear Search" aria-label="Clear search query">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="search-kbd-shortcut" title="Press Ctrl+K to search"><kbd>Ctrl+K</kbd></span>
+          </div>
+          <!-- Autocomplete Suggestions Dropdown -->
+          <div class="search-suggestions-dropdown hidden" id="searchSuggestionsDropdown">
+            <div class="suggestions-header">
+              <span><i class="fa-solid fa-location-crosshairs"></i> Suggested Locations</span>
+              <span class="suggestions-count" id="suggestionsCount">0 found</span>
+            </div>
+            <div class="suggestions-list" id="suggestionsList"></div>
+          </div>
+        </div>
+
+        <!-- Radar Region Selector -->
+        <div class="region-select-wrapper" title="Select Doppler Weather Radar Station">
+          <i class="fa-solid fa-tower-broadcast"></i>
+          <select id="regionSelector" class="custom-select" aria-label="Forecast Region">
+            <option value="hyderabad">Hyderabad &amp; Telangana (DWR Begumpet)</option>
+            <option value="kolkata">Kolkata &amp; Bengal (Nor'wester / Kalbaisakhi)</option>
+            <option value="delhi">Delhi-NCR &amp; Western UP (Mausam Bhawan)</option>
+            <option value="bhubaneswar">Bhubaneswar &amp; Odisha Coast (DWR Paradip)</option>
+            <option value="mumbai">Mumbai &amp; Konkan Coast (DWR Veravali)</option>
+            <option value="chennai">Chennai &amp; Coastal TN (DWR Sriharikota)</option>
+            <option value="guwahati">Guwahati &amp; Assam Valley (DWR Borjhar)</option>
+            <option value="bengaluru">Bengaluru &amp; South Karnataka (DWR Bengaluru)</option>
+          </select>
+        </div>
+
+        <!-- View Mode Switcher: Simple vs Advanced Radar -->
+        <div class="view-mode-pill" id="viewModeToggle">
+          <button class="view-mode-btn active" id="btnCitizenMode" title="Simple Citizen View: plain-English warnings and safety advice">
+            <i class="fa-solid fa-person-shield"></i> Simple View
           </button>
-          <span class="search-kbd-shortcut" title="Press Ctrl+K or / to search"><kbd>Ctrl+K</kbd></span>
+          <button class="view-mode-btn" id="btnExpertMode" title="Meteorologist View: Doppler radar soundings, CAPE/CIN, and AI metrics">
+            <i class="fa-solid fa-satellite-dish"></i> Advanced Radar
+          </button>
         </div>
-        <!-- Autocomplete Suggestions Dropdown -->
-        <div class="search-suggestions-dropdown hidden" id="searchSuggestionsDropdown">
-          <div class="suggestions-header">
-            <span><i class="fa-solid fa-location-crosshairs"></i> Suggested Areas &amp; Locations</span>
-            <span class="suggestions-count" id="suggestionsCount">0 found</span>
-          </div>
-          <div class="suggestions-list" id="suggestionsList">
-            <!-- Populated dynamically -->
-          </div>
-          <div class="suggestions-footer">
-            <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
-            <span><kbd>↵</kbd> Select</span>
-            <span><kbd>Esc</kbd> Close</span>
-            <span><i class="fa-solid fa-map-pin"></i> Click map to inspect any point</span>
-          </div>
+
+        <!-- Action Tools & Modals -->
+        <div class="flex items-center gap-space-xs">
+          <button class="btn btn-outline expert-only" id="btnOpenSandbox" title="Interactive What-If Scenario Simulator">
+            <i class="fa-solid fa-flask"></i> Simulator
+          </button>
+          <button class="btn btn-outline expert-only" id="btnOpenSounding" title="Thermodynamic Skew-T Sounding Profile">
+            <i class="fa-solid fa-chart-area"></i> Skew-T
+          </button>
+          <button class="btn btn-outline expert-only" id="btnOpenMeteogram" title="Convective Evolution Meteogram Time-Series">
+            <i class="fa-solid fa-timeline"></i> Meteogram
+          </button>
+          <button class="btn btn-outline expert-only" id="btnOpenMetrics" title="Model verification metrics &amp; AI Benchmarks">
+            <i class="fa-solid fa-chart-line"></i> Model Stats
+          </button>
+          <button class="btn btn-outline" id="btnOpenPrivacy" title="Privacy Policy &amp; Data Governance">
+            <i class="fa-solid fa-user-shield"></i> Privacy
+          </button>
+          <button class="btn btn-alert" id="btnOpenAlerts" title="Active CAP Early Warnings">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span class="alert-count-badge" id="alertCountBadge">1</span> Alerts
+          </button>
+          <button class="btn btn-icon-only" id="btnToggleAudio" title="Toggle Audio Siren Chime" aria-label="Toggle Alert Audio">
+            <i class="fa-solid fa-volume-high" id="audioIcon"></i>
+          </button>
         </div>
       </div>
-
-      <div class="region-select-wrapper" title="Select Doppler Weather Radar Station">
-        <i class="fa-solid fa-location-dot"></i>
-        <select id="regionSelector" class="custom-select" aria-label="Forecast Region">
-          <option value="hyderabad">Hyderabad &amp; Telangana (DWR Begumpet)</option>
-          <option value="kolkata">Kolkata &amp; Bengal (Nor'wester / Kalbaisakhi)</option>
-          <option value="delhi">Delhi-NCR &amp; Western UP (Mausam Bhawan)</option>
-          <option value="bhubaneswar">Bhubaneswar &amp; Odisha Coast (DWR Paradip)</option>
-          <option value="mumbai">Mumbai &amp; Konkan Coast (DWR Veravali)</option>
-          <option value="chennai">Chennai &amp; Coastal TN (DWR Sriharikota)</option>
-          <option value="guwahati">Guwahati &amp; Assam Valley (DWR Borjhar)</option>
-          <option value="bengaluru">Bengaluru &amp; South Karnataka (DWR Bengaluru)</option>
-        </select>
-      </div>
-
-      <div class="lead-tabs" role="tablist" title="Select AI Forecast Horizon">
-        <button class="tab-btn active" data-lead="30m" id="tab30m"><i class="fa-regular fa-clock"></i> +30 Min</button>
-        <button class="tab-btn" data-lead="60m" id="tab60m"><i class="fa-regular fa-clock"></i> +60 Min</button>
-        <button class="tab-btn" data-lead="90m" id="tab90m"><i class="fa-regular fa-clock"></i> +90 Min</button>
-      </div>
-    </div>
-
-    <!-- Right Action Buttons -->
-    <div class="header-actions">
-      <button class="btn btn-guide" id="btnOpenGuide" title="Learn how to use this platform in 1 minute">
-        <i class="fa-solid fa-book-open-reader"></i> User Guide
-      </button>
-      <button class="btn btn-outline expert-only" id="btnOpenSounding" title="Thermodynamic Skew-T Sounding Profile">
-        <i class="fa-solid fa-chart-area"></i> Skew-T Sounding
-      </button>
-      <button class="btn btn-outline expert-only" id="btnOpenMeteogram" title="Nowcast Trend Meteogram Time-Series">
-        <i class="fa-solid fa-chart-simple"></i> Meteogram
-      </button>
-      <button class="btn btn-outline btn-highlight expert-only" id="btnOpenSandbox" title="Test AI with custom atmospheric parameters">
-        <i class="fa-solid fa-sliders"></i> What-If Sandbox
-      </button>
-      <button class="btn btn-outline expert-only" id="btnOpenMetrics" title="Model verification metrics &amp; AI Benchmarks">
-        <i class="fa-solid fa-chart-line"></i> Model AI Stats
-      </button>
-      <button class="btn btn-outline" id="btnOpenPrivacy" title="Privacy Policy &amp; Data Governance">
-        <i class="fa-solid fa-user-shield"></i> Privacy Policy
-      </button>
-      <button class="btn btn-alert" id="btnOpenAlerts" title="Active CAP Early Warnings">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        <span class="alert-count-badge" id="alertCountBadge">1</span> Alerts
-      </button>
-      <button class="btn btn-icon-only" id="btnToggleAudio" title="Toggle Audio Siren Chime" aria-label="Toggle Alert Audio">
-        <i class="fa-solid fa-volume-high" id="audioIcon"></i>
-      </button>
     </div>
   </header>
 
-  <!-- Emergency Warning Banner -->
-  <div id="topAlertBanner" class="alert-banner severe hidden">
-    <div class="alert-banner-content">
-      <i class="fa-solid fa-circle-exclamation banner-icon"></i>
-      <div class="banner-text">
-        <strong id="bannerHeadline">RED ALERT: Severe Thunderstorm &amp; Lightning Warning</strong>
-        <span id="bannerDetails">High probability convective core approaching Hyderabad. Expected onset within 30 min.</span>
-      </div>
-    </div>
-    <div class="banner-actions">
-      <button class="btn btn-sm btn-light" id="btnViewAlertDetails">View Safety Directives</button>
-      <button class="banner-close" id="btnCloseBanner"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-  </div>
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <main class="w-full pt-20 bg-surface min-h-[calc(100vh-3.5rem)]">
+    <div class="flex flex-col w-full text-on-surface">
 
-  <!-- Main Dashboard Layout -->
-  <main class="dashboard-container">
-    <!-- Left Sidebar: Overview & Diagnostics -->
-    <aside class="sidebar left-sidebar">
-      <!-- 1. Citizen Quick Storm Warning & Arrival Hero Card (Always visible) -->
-      <div class="card citizen-hero-card severe" id="citizenHeroCard">
-        <div class="citizen-status-head">
-          <div class="citizen-status-icon" id="citizenStatusIconBox">
-            <i class="fa-solid fa-triangle-exclamation" id="citizenStatusIcon"></i>
-          </div>
-          <div>
-            <div class="citizen-eta-tag" id="citizenEtaBadge">
-              <i class="fa-regular fa-clock"></i> <span id="citizenEtaText">Storm arriving in ~25 min</span>
+      <!-- TOP HERO ALERT & CONVECTIVE STATE BAR -->
+      <section class="w-full px-gutter-lg py-space-sm bg-surface-container-lowest shadow-2xl relative overflow-hidden border-b border-outline-variant/20">
+        <!-- Atmospheric Energy Underglow -->
+        <div class="absolute -top-12 left-1/4 w-96 h-28 bg-error/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-8 right-1/3 w-80 h-24 bg-primary-container/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md relative z-10">
+          <!-- Critical Warning Header Unit -->
+          <div class="flex flex-col md:flex-row items-start md:items-center gap-space-md">
+            <div class="flex items-center gap-space-xs bg-error-container text-on-error px-space-sm py-space-xs rounded-lg shadow-lg shadow-error/30 animate-pulse border border-error/50">
+              <span class="material-symbols-outlined text-[20px] font-bold" style="font-variation-settings: 'FILL' 1;">warning</span>
+              <span class="font-label-lg text-label-lg uppercase tracking-wider font-extrabold text-on-error" id="heroCellTitle">CELL #TC-904 CONVECTIVE ERUPTION</span>
             </div>
-            <h3 id="citizenStatusTitle">DANGER: Thunderstorm Approaching</h3>
-          </div>
-        </div>
-
-        <p class="citizen-summary-text" id="citizenSummaryText">
-          Severe storm core detected in the forecast area. High probability of dangerous lightning, strong wind gusts, and heavy downpours over the next 30 to 60 minutes.
-        </p>
-
-        <!-- 4 Simple Impact Tiles: Rain, Lightning, Wind, Hail -->
-        <div class="citizen-impact-grid">
-          <div class="citizen-impact-card">
-            <div class="card-top">
-              <i class="fa-solid fa-cloud-showers-heavy text-blue"></i>
-              <span>Rain Likelihood</span>
-            </div>
-            <strong id="citizenRainVal">94% (Heavy Rain)</strong>
-            <span class="card-sub" id="citizenRainSub">Expected: 25 - 45 mm/hr</span>
-          </div>
-
-          <div class="citizen-impact-card">
-            <div class="card-top">
-              <i class="fa-solid fa-bolt text-warning"></i>
-              <span>Lightning Danger</span>
-            </div>
-            <strong class="text-danger" id="citizenLightningVal">EXTREME THREAT</strong>
-            <span class="card-sub" id="citizenLightningSub">58 active lightning strikes</span>
-          </div>
-
-          <div class="citizen-impact-card">
-            <div class="card-top">
-              <i class="fa-solid fa-wind text-cyan"></i>
-              <span>Wind Gusts</span>
-            </div>
-            <strong id="citizenWindVal">45 - 60 km/h</strong>
-            <span class="card-sub" id="citizenWindSub">Heading North-East</span>
-          </div>
-
-          <div class="citizen-impact-card">
-            <div class="card-top">
-              <i class="fa-solid fa-snowflake text-accent"></i>
-              <span>Hail / Squall Risk</span>
-            </div>
-            <strong id="citizenHailVal">Elevated Risk</strong>
-            <span class="card-sub" id="citizenHailSub">Small hail possible</span>
-          </div>
-        </div>
-
-        <!-- Plain-English Life-Safety Directives (NDMA) -->
-        <div class="citizen-safety-box">
-          <h4><i class="fa-solid fa-shield-halved text-cyan"></i> What you should do right now:</h4>
-          <div class="safety-step-row">
-            <div class="safety-step-icon"><i class="fa-solid fa-house-chimney"></i></div>
-            <div><strong>Move Indoors:</strong> Stay inside a solid building or hard-top vehicle.</div>
-          </div>
-          <div class="safety-step-row">
-            <div class="safety-step-icon"><i class="fa-solid fa-tree"></i></div>
-            <div><strong>Avoid Trees &amp; Open Poles:</strong> Never stand under tall trees or metal sheds.</div>
-          </div>
-          <div class="safety-step-row">
-            <div class="safety-step-icon"><i class="fa-solid fa-plug-circle-exclamation"></i></div>
-            <div><strong>Unplug Appliances:</strong> Protect electronics from lightning power surges.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hidden compatibility anchors for existing tests & legacy bindings -->
-      <div style="display:none;" id="situationCard">
-        <span id="situationSummaryText"></span>
-        <span id="chipHailRisk"></span>
-        <span id="chipWindRisk"></span>
-      </div>
-
-      <!-- 2. Advanced Meteorologist Diagnostics (Shown in Advanced Radar mode) -->
-      <div class="expert-only" id="expertPanelsGroup">
-        <!-- Quick Threat Matrix Card -->
-        <div class="card threat-card" id="threatCard">
-          <div class="card-header">
-            <h3><i class="fa-solid fa-shield-halved"></i> AI Threat Matrix (Radar dBZ)</h3>
-            <span class="lead-pill" id="currentLeadPill">+30 Min Lead</span>
-          </div>
-          
-          <div class="threat-display">
-            <div class="threat-gauge-wrapper">
-              <div class="gauge-circle" id="threatGaugeCircle">
-                <span class="gauge-value" id="tsProbabilityText">--%</span>
-                <span class="gauge-label">Storm Prob</span>
+            <div class="flex flex-wrap items-center gap-space-sm font-label-md text-label-md">
+              <div class="bg-surface-container px-space-sm py-space-xs rounded-lg flex items-center gap-space-xs border border-outline-variant/20">
+                <span class="text-on-surface-variant font-code-stream text-code-stream uppercase">SURGE PROB</span>
+                <span class="text-error font-data-display text-label-lg font-bold" id="heroSurgeProb">98.4%</span>
               </div>
-            </div>
-            <div class="threat-breakdown">
-              <div class="threat-row">
-                <span class="lbl" title="AI Convective Thunderstorm Risk Category">Thunderstorm Risk</span>
-                <span class="badge badge-severe" id="tsRiskBadge">--</span>
+              <div class="bg-surface-container-high px-space-sm py-space-xs rounded-lg flex items-center gap-space-xs border border-outline-variant/20">
+                <span class="text-on-surface-variant font-code-stream text-code-stream uppercase">LEAD TIME</span>
+                <span class="text-primary font-data-display text-label-lg font-bold" id="heroLeadTime">T-00:32m</span>
+                <span class="text-on-surface-variant text-body-sm">to Ground Surge</span>
               </div>
-              <div class="threat-row">
-                <span class="lbl" title="AI Cloud-to-Ground & Intra-Cloud Lightning Severity">Lightning Threat</span>
-                <span class="badge badge-severe" id="ltgRiskBadge">--</span>
-              </div>
-              <div class="threat-row">
-                <span class="lbl" title="Maximum predicted radar reflectivity core">Expected Peak dBZ</span>
-                <span class="val font-mono" id="expectedDbzVal">-- dBZ</span>
-              </div>
-              <div class="threat-row">
-                <span class="lbl" title="Estimated flash count per minute">Flash Rate</span>
-                <span class="val font-mono" id="expectedFlashRateVal">-- f/min</span>
+              <div class="hidden sm:flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded-lg border border-outline-variant/20">
+                <span class="text-on-surface-variant font-code-stream text-code-stream">CAPE:</span>
+                <span class="text-tertiary font-label-md font-semibold" id="heroCape">3,890 J/kg</span>
+                <span class="text-outline-variant">|</span>
+                <span class="text-on-surface-variant font-code-stream text-code-stream">VIL:</span>
+                <span class="text-secondary font-label-md font-semibold" id="heroVil">54.2 kg/m²</span>
               </div>
             </div>
           </div>
 
-          <div class="storm-motion-bar">
-            <div class="motion-item">
-              <i class="fa-solid fa-compass" id="compassIcon"></i>
-              <div>
-                <span class="sub-lbl">Movement</span>
-                <strong id="stormHeadingVal">NE (48°)</strong>
-              </div>
-            </div>
-            <div class="motion-item">
-              <i class="fa-solid fa-gauge-high"></i>
-              <div>
-                <span class="sub-lbl">Cell Speed</span>
-                <strong id="stormSpeedVal">38 km/h</strong>
-              </div>
-            </div>
-            <div class="motion-item">
-              <i class="fa-solid fa-arrow-trend-up"></i>
-              <div>
-                <span class="sub-lbl">Trend</span>
-                <strong id="stormGrowthVal" class="text-warning">Intensifying</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Schultz Lightning Jump & Precursor Card -->
-        <div class="card lightning-card">
-          <div class="card-header">
-            <h3><i class="fa-solid fa-bolt"></i> Lightning &amp; Convective Jump</h3>
-            <span class="sub-tag" title="Schultz 2-sigma algorithm detects rapid lightning flash rate surges 15-30 min before severe microbursts & hail">Schultz 2σ Detection <i class="fa-regular fa-circle-question"></i></span>
-          </div>
-          <div class="lightning-stats-grid">
-            <div class="stat-box" id="jumpIndicatorBox">
-              <span class="stat-lbl">Lightning Jump</span>
-              <strong class="stat-val text-danger" id="jumpStatusText">JUMP (2.8σ)</strong>
-              <span class="stat-desc">Severe wind / hail precursor</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-lbl">15-Min Flash Count</span>
-              <strong class="stat-val font-mono" id="flashCountVal">57</strong>
-              <span class="stat-desc">32% Cloud-to-Ground (CG)</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Atmospheric Sounding & Thermodynamic Diagnostics -->
-        <div class="card sounding-card">
-          <div class="card-header">
-            <h3><i class="fa-solid fa-temperature-half"></i> Thermodynamic Diagnostics</h3>
-            <span class="sub-tag">WRF / In Situ</span>
-          </div>
-          <div class="sounding-grid">
-            <div class="sounding-item" title="Convective Available Potential Energy: Fuel for storm updrafts (>2000 J/kg is high)">
-              <span class="snd-lbl">CAPE (Updraft Energy) <i class="fa-regular fa-circle-question"></i></span>
-              <strong class="snd-val font-mono text-danger" id="capeVal">2550 J/kg</strong>
-            </div>
-            <div class="sounding-item" title="Convective Inhibition: Atmospheric cap preventing storm (<50 J/kg allows storms to break)">
-              <span class="snd-lbl">CIN (Cap Barrier) <i class="fa-regular fa-circle-question"></i></span>
-              <strong class="snd-val font-mono text-success" id="cinVal">35 J/kg</strong>
-            </div>
-            <div class="sounding-item" title="Lifted Index: Negative values indicate buoyant, rapidly rising storm updrafts">
-              <span class="snd-lbl">Lifted Index <i class="fa-regular fa-circle-question"></i></span>
-              <strong class="snd-val font-mono text-danger" id="liVal">-5.8 °C</strong>
-            </div>
-            <div class="sounding-item" title="K-Index: Measures moisture and stability. >35 indicates high thunderstorm likelihood">
-              <span class="snd-lbl">K-Index (TS Pot) <i class="fa-regular fa-circle-question"></i></span>
-              <strong class="snd-val font-mono text-warning" id="kIndexVal">36.5</strong>
-            </div>
-            <div class="sounding-item" title="Radar Echo Top: Maximum storm cloud altitude (km)">
-              <span class="snd-lbl">Echo Top (ET)</span>
-              <strong class="snd-val font-mono" id="echoTopVal">14.2 km</strong>
-            </div>
-            <div class="sounding-item" title="Vertically Integrated Liquid: Total mass of suspended rain/hail in cloud column">
-              <span class="snd-lbl">VIL Density</span>
-              <strong class="snd-val font-mono" id="vilVal">28.4 kg/m²</strong>
-            </div>
-          </div>
-        </div>
-
-        <!-- Explainable AI (XAI) Feature Drivers -->
-        <div class="card xai-card">
-          <div class="card-header">
-            <h3><i class="fa-solid fa-brain"></i> AI Decision Explanations</h3>
-            <span class="sub-tag" title="SHAP feature attribution explaining why the AI predicted this probability">XAI SHAP <i class="fa-regular fa-circle-question"></i></span>
-          </div>
-          <div class="xai-list" id="xaiDriversList">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Center Section: Interactive Geospatial GIS Map -->
-    <section class="map-section">
-      <div class="map-wrapper">
-        <!-- Floating Layer Control Toolbar -->
-        <div class="map-layer-toolbar">
-          <div class="toolbar-section">
-            <div class="toolbar-title"><i class="fa-solid fa-map-location-dot"></i> Base Map (Google Maps)</div>
-            <select id="baseMapSelect" class="basemap-select" title="Switch Map Background View">
-              <option value="google_hybrid" selected>Google Hybrid (Satellite &amp; Roads)</option>
-              <option value="google_streets">Google Streets (City &amp; Locations)</option>
-              <option value="google_terrain">Google Terrain (Topography)</option>
-              <option value="google_sat">Google Satellite (Imagery Only)</option>
-              <option value="carto_dark">Dark Radar Mode (CartoDB)</option>
-              <option value="osm">OpenStreetMap</option>
-            </select>
-          </div>
-          <div class="toolbar-divider"></div>
-          <div class="toolbar-section">
-            <div class="toolbar-title"><i class="fa-solid fa-layer-group"></i> Radar Overlays</div>
-            <label class="layer-toggle-btn active" id="toggleRadarLayer" title="Toggle Doppler Weather Radar Reflectivity">
-              <input type="checkbox" checked id="chkRadar">
-              <span class="toggle-dot radar-dot"></span> Radar (DWR dBZ)
-            </label>
-            <label class="layer-toggle-btn active" id="toggleSatelliteLayer" title="Toggle INSAT-3D Infrared Cloud Top Temperature">
-              <input type="checkbox" checked id="chkSat">
-              <span class="toggle-dot sat-dot"></span> Satellite (INSAT CTT)
-            </label>
-            <label class="layer-toggle-btn active" id="toggleLightningLayer" title="Toggle Real-Time Cloud-to-Ground &amp; Intra-Cloud Lightning Strikes">
-              <input type="checkbox" checked id="chkLtg">
-              <span class="toggle-dot ltg-dot"></span> Lightning Strikes
-            </label>
-            <label class="layer-toggle-btn active" id="toggleTrackLayer" title="Toggle Projected Storm Motion Trajectory &amp; Uncertainty Cones">
-              <input type="checkbox" checked id="chkTrack">
-              <span class="toggle-dot track-dot"></span> Storm Vector &amp; Cone
-            </label>
-          </div>
-        </div>
-
-        <!-- The Leaflet GIS Map Container -->
-        <div id="gisMap" class="gis-map"></div>
-
-        <!-- Colormap Legends (IMD Radar + Satellite IR) -->
-        <div class="map-legends">
-          <div class="legend-box radar-legend">
-            <div class="legend-title">Rain &amp; Storm Intensity</div>
-            <div class="legend-gradient radar-bar"></div>
-            <div class="legend-labels">
-              <span>Light Rain</span><span>Moderate</span><span>Heavy Rain</span><span>Severe Storm</span><span>Hail</span>
-            </div>
-          </div>
-          <div class="legend-box sat-legend expert-only">
-            <div class="legend-title">INSAT-3D Cloud Top Temp (°C)</div>
-            <div class="legend-gradient sat-bar"></div>
-            <div class="legend-labels">
-              <span>20°</span><span>0°</span><span>-20°</span><span>-40°</span><span>-60° Cold Core</span><span>-80° Overshoot</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Map Floating Cell Info Overlay -->
-        <div class="floating-cell-info" id="floatingCellInfo">
-          <div class="cell-info-header">
-            <strong id="cellInfoId">CELL-HYD-01</strong>
-            <span class="badge badge-severe" id="cellInfoSeverity">Severe Core</span>
-          </div>
-          <div class="cell-info-body">
-            <div><span>Max Reflectivity:</span> <strong id="cellInfoMaxDbz">65.6 dBZ</strong></div>
-            <div><span>Trajectory:</span> <strong id="cellInfoTraj">48° @ 38 km/h</strong></div>
-            <div><span>Area:</span> <strong id="cellInfoArea">420 km²</strong></div>
-          </div>
-        </div>
-
-        <!-- Searched Specific Area Weather Threat Card -->
-        <div class="searched-area-card hidden" id="searchedAreaCard">
-          <div class="searched-area-header">
-            <div class="area-title-group">
-              <i class="fa-solid fa-location-dot area-pin-icon"></i>
-              <div>
-                <h4 id="searchedAreaTitle">Gachibowli, Hyderabad</h4>
-                <div class="area-meta-row">
-                  <span class="badge badge-sm" id="searchedAreaCategory">Locality</span>
-                  <span class="area-coords font-mono" id="searchedAreaCoords">17.4401° N, 78.3489° E</span>
-                </div>
-              </div>
-            </div>
-            <div class="header-right-actions">
-              <span class="badge badge-severe" id="searchedAreaThreatBadge">Severe Threat</span>
-              <button class="card-close-btn" id="btnCloseSearchedArea" onclick="event.stopPropagation(); document.getElementById('searchedAreaCard').classList.add('hidden'); document.getElementById('searchedAreaCard').style.display='none';" title="Close Area Card"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-          </div>
-
-          <div class="searched-area-body">
-            <!-- Threat Score Gauge Banner -->
-            <div class="searched-threat-banner" id="searchedThreatBanner">
-              <div class="threat-score-pill">
-                <span class="threat-pct font-mono" id="searchedThreatScore">96%</span>
-                <span class="threat-sub">Threat Index</span>
-              </div>
-              <div class="threat-banner-text">
-                <strong id="searchedThreatHeadline">High-Impact Severe Convective Zone</strong>
-                <span id="searchedRadarContext">Covered by DWR Begumpet (18.2 km)</span>
-              </div>
-            </div>
-
-            <!-- OpenWeatherMap Real-Time In-Situ Observations Box -->
-            <div class="owm-live-box hidden" id="owmLiveBox">
-              <div class="owm-live-head">
-                <span><i class="fa-solid fa-satellite-dish text-cyan"></i> Live Surface Observation (OpenWeatherMap)</span>
-                <span class="live-pulse-dot"></span>
-              </div>
-              <div class="owm-content-row">
-                <img src="https://openweathermap.org/img/wn/02d.png" id="owmWeatherIcon" class="owm-weather-img" alt="Condition">
-                <div class="owm-details">
-                  <div class="owm-temp-line">
-                    <strong class="font-mono text-cyan" id="owmTemp">-- °C</strong>
-                    <span class="owm-condition-text" id="owmCondition">Loading...</span>
-                  </div>
-                  <div class="owm-sub-grid">
-                    <span><i class="fa-solid fa-droplet text-blue"></i> <b id="owmHumidity">--%</b> RH</span>
-                    <span><i class="fa-solid fa-wind text-cyan"></i> <b id="owmWind">-- km/h</b></span>
-                    <span><i class="fa-solid fa-gauge text-warning"></i> <b id="owmPressure">-- hPa</b></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Meteorological Metrics Grid -->
-            <div class="searched-metrics-grid">
-              <div class="searched-metric-item">
-                <span class="lbl"><i class="fa-solid fa-cloud-rain text-accent"></i> Local Radar dBZ</span>
-                <strong class="val font-mono" id="searchedLocalDbz">-- dBZ</strong>
-                <span class="sub" id="searchedRainRate">-- mm/h rain</span>
-              </div>
-              <div class="searched-metric-item">
-                <span class="lbl"><i class="fa-solid fa-cloud-bolt text-danger"></i> Nearest Storm Core</span>
-                <strong class="val font-mono text-danger" id="searchedNearestCell">-- km</strong>
-                <span class="sub" id="searchedCellEta"><i class="fa-solid fa-arrow-right"></i> None in range</span>
-              </div>
-              <div class="searched-metric-item">
-                <span class="lbl"><i class="fa-solid fa-bolt text-warning"></i> Lightning (15km)</span>
-                <strong class="val font-mono text-warning" id="searchedLightningCount">0 strikes</strong>
-                <span class="sub">Active CG/IC field</span>
-              </div>
-              <div class="searched-metric-item">
-                <span class="lbl"><i class="fa-solid fa-satellite text-blue"></i> Cloud Top Temp</span>
-                <strong class="val font-mono" id="searchedCloudTemp">-- °C</strong>
-                <span class="sub">Convective cloud status</span>
-              </div>
-            </div>
-
-            <!-- Life-Safety Advisory Directive -->
-            <div class="searched-safety-box" id="searchedSafetyBox">
-              <div class="safety-icon"><i class="fa-solid fa-person-shelter"></i></div>
-              <div class="safety-content">
-                <strong>NDMA / IMD Area Advisory:</strong>
-                <p id="searchedSafetyText">Atmospherically stable conditions at this location.</p>
-              </div>
-            </div>
-
-            <!-- Action Controls -->
-            <div class="searched-actions-row">
-              <button class="btn btn-xs btn-outline" id="btnRecenterSearchedArea" title="Center map on this area">
-                <i class="fa-solid fa-crosshairs"></i> Center
-              </button>
-              <button class="btn btn-xs btn-outline" id="btnSwitchToNearestRadar" title="Switch radar overlay to nearest station">
-                <i class="fa-solid fa-tower-broadcast"></i> Switch Radar
-              </button>
-              <button class="btn btn-xs btn-outline btn-clear-area" id="btnClearAreaPin" title="Remove search pin">
-                <i class="fa-solid fa-trash-can"></i> Clear Pin
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Spatiotemporal Timeline Playback Controls -->
-      <div class="timeline-bar">
-        <div class="timeline-playback-btn">
-          <button class="btn-icon" id="btnPlayPause" title="Play / Pause Time Series (Spacebar)">
-            <i class="fa-solid fa-play" id="playIcon"></i>
-          </button>
-          <button class="btn-icon" id="btnLiveMode" title="Jump to Live Scan (t0)">
-            <i class="fa-solid fa-satellite-dish"></i> LIVE
-          </button>
-        </div>
-
-        <div class="timeline-slider-container">
-          <div class="timeline-ticks" id="timelineTicks">
-            <!-- Timeline points: -60, -45, -30, -15, t0, +15, +30, +45, +60, +90 -->
-          </div>
-          <input type="range" id="timelineSlider" min="0" max="9" value="4" step="1" class="timeline-range" aria-label="Observation and forecast time slider">
-        </div>
-
-        <div class="timeline-current-label">
-          <span class="badge" id="timelineTypeBadge">Live Observation</span>
-          <strong id="timelineTimeDisplay">t0 (Live Scan)</strong>
-        </div>
-
-        <!-- Keyboard Shortcut Hint -->
-        <div class="keyboard-hints" title="Keyboard Shortcuts">
-          <span><kbd>Space</kbd> Play/Pause</span>
-          <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Leads</span>
-          <span><kbd>←</kbd><kbd>→</kbd> Scrub</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Right Sidebar: Detected Cells, Early Warnings, Multi-Sensor Feeds -->
-    <aside class="sidebar right-sidebar">
-      <!-- Active Convective Cells Tracking List -->
-      <div class="card cells-list-card expert-only">
-        <div class="card-header">
-          <h3><i class="fa-solid fa-cloud-bolt"></i> Convective Cells (SCIT/TITAN)</h3>
-          <span class="cell-count" id="activeCellsCount">1 Cell Active</span>
-        </div>
-        <div class="cells-container" id="cellsContainer">
-          <!-- Populated dynamically -->
-        </div>
-      </div>
-
-      <!-- Active Early Warning Advisory Card -->
-      <div class="card alert-details-card" id="activeAlertCard">
-        <div class="card-header">
-          <h3><i class="fa-solid fa-triangle-exclamation text-danger"></i> CAP Warning Advisory</h3>
-          <span class="badge badge-severe" id="capSeverityBadge">Extreme</span>
-        </div>
-        <div class="cap-content">
-          <h4 id="capAlertHeadline">Severe Thunderstorm &amp; Lightning Warning</h4>
-          <p class="cap-time-valid" id="capValidity">Valid: Next 60-90 minutes</p>
-          
-          <div class="cap-section">
-            <h5><i class="fa-solid fa-location-crosshairs"></i> High-Risk Impact Zones</h5>
-            <div class="zone-tags" id="capAffectedZones">
-              <!-- Zone badges -->
-            </div>
-          </div>
-
-          <div class="cap-section">
-            <h5><i class="fa-solid fa-triangle-exclamation"></i> Forecast Hazards</h5>
-            <ul class="hazard-list" id="capHazardsList">
-              <!-- Hazards -->
-            </ul>
-          </div>
-
-          <div class="cap-section">
-            <h5><i class="fa-solid fa-person-shelter"></i> Life-Safety Directives (NDMA)</h5>
-            <ul class="safety-list" id="capSafetyList">
-              <!-- Instructions -->
-            </ul>
-          </div>
-
-          <div class="cap-actions-grid">
-            <button class="btn btn-block btn-outline" id="btnSimulateBroadcast">
-              <i class="fa-solid fa-tower-broadcast"></i> Test Broadcast Simulation
+          <!-- Quick Action Controls -->
+          <div class="flex flex-wrap items-center gap-space-sm font-label-md text-label-md">
+            <button class="bg-error text-on-error hover:bg-error/90 px-space-md py-space-xs rounded-lg font-bold tracking-wide flex items-center gap-space-xs shadow-lg shadow-error/40 transition-all hover:scale-105 active:scale-95" id="cap-alert-btn">
+              <span class="material-symbols-outlined text-[16px]">campaign</span>
+              <span>EMIT CAP v1.2 SACHET</span>
             </button>
-            <div class="cap-export-row">
-              <a href="/api/alerts/cap.xml" target="_blank" class="btn btn-sm btn-outline" id="btnDownloadCapXml" title="Download OASIS CAP-v1.2 Standard XML">
-                <i class="fa-solid fa-code"></i> CAP XML
-              </a>
-              <a href="/api/alerts/geojson" target="_blank" class="btn btn-sm btn-outline" id="btnDownloadGeoJson" title="Download GIS GeoJSON Polygons">
-                <i class="fa-solid fa-map-location-dot"></i> GeoJSON
-              </a>
-              <a href="/api/export-bulletin" target="_blank" class="btn btn-sm btn-outline" id="btnDownloadBulletin" title="Download Text Meteorological Bulletin">
-                <i class="fa-solid fa-file-lines"></i> Bulletin
-              </a>
+            <a href="/api/alerts/geojson" target="_blank" class="bg-surface-container hover:bg-surface-container-high text-on-surface px-space-md py-space-xs rounded-lg font-medium flex items-center gap-space-xs shadow-md transition-colors border border-outline-variant/25" id="btnExportGeoJson">
+              <span class="material-symbols-outlined text-primary text-[16px]">polyline</span>
+              <span>EXPORT GEOJSON</span>
+            </a>
+            <button class="bg-surface-container-high hover:bg-surface-bright text-primary px-space-md py-space-xs rounded-lg font-medium flex items-center gap-space-xs shadow-md transition-colors border border-outline-variant/25" id="toggle-dipole-btn">
+              <span class="material-symbols-outlined text-[16px]">layers</span>
+              <span id="dipole-label">3D ELECTRIC DIPOLE [ON]</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= CITIZEN HERO WARNING CARD (Simple View) ================= -->
+      <div class="px-gutter-lg pt-space-md citizen-only">
+        <div class="card citizen-hero-card severe" id="citizenHeroCard">
+          <div class="citizen-status-head">
+            <div class="citizen-status-icon" id="citizenStatusIconBox">
+              <i class="fa-solid fa-triangle-exclamation" id="citizenStatusIcon"></i>
+            </div>
+            <div>
+              <div class="citizen-eta-tag" id="citizenEtaBadge">
+                <i class="fa-regular fa-clock"></i> <span id="citizenEtaText">Storm arriving in ~25 min</span>
+              </div>
+              <h3 id="citizenStatusTitle">DANGER: Thunderstorm Approaching</h3>
+            </div>
+          </div>
+
+          <p class="citizen-summary-text" id="citizenSummaryText">
+            Severe storm core detected in the forecast area. High probability of dangerous lightning, strong wind gusts, and heavy downpours over the next 30 to 60 minutes.
+          </p>
+
+          <div class="citizen-do-dont-grid">
+            <div class="citizen-directive-col do-col">
+              <div class="directive-head"><i class="fa-solid fa-circle-check"></i> What you should do right now:</div>
+              <ul id="citizenDoList">
+                <li>Take shelter immediately inside a sturdy, permanent building with solid roof and walls.</li>
+                <li>Stay away from windows, balconies, plumbing fixtures, and wired electrical appliances.</li>
+                <li>If driving, pull over safely away from trees, tall structures, and power poles.</li>
+              </ul>
+            </div>
+            <div class="citizen-directive-col dont-col">
+              <div class="directive-head"><i class="fa-solid fa-circle-xmark"></i> What to avoid:</div>
+              <ul id="citizenDontList">
+                <li>Do NOT seek shelter under isolated trees, metal sheds, open tin structures, or towers.</li>
+                <li>Do NOT remain in open fields, playgrounds, elevated terraces, or water bodies.</li>
+                <li>Avoid using plugged-in electronic devices, landline corded phones, and running water taps.</li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
-    </aside>
 
+      <!-- ================= MAIN OPERATIONAL VIEWPORT (Tactical Canvas & HUD) ================= -->
+      <section class="w-full px-gutter-lg py-space-md">
+        <div class="relative w-full h-[620px] rounded-xl overflow-hidden shadow-2xl bg-surface-container-lowest border border-outline-variant/30">
+          
+          <!-- Leaflet GIS Map Container (Google Maps Background + Doppler Canvas) -->
+          <div id="gisMap" class="w-full h-full z-10"></div>
+
+          <!-- Synthetic Grid and Scanline Overlay -->
+          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-surface-container-lowest/30 to-surface/80 pointer-events-none z-20"></div>
+
+          <!-- Tactical Reticle Coordinates (Top Left) -->
+          <div class="absolute top-4 left-4 font-code-stream text-label-sm text-on-surface-variant flex items-center gap-space-xs pointer-events-none z-30 bg-surface-container-lowest/80 backdrop-blur-md px-space-sm py-1 rounded border border-outline-variant/20">
+            <span class="text-primary font-bold">+</span>
+            <span id="mapReticleCoords">LAT: 17°23'06"N | LON: 78°29'12"E [TELANGANA RADAR CORRIDOR]</span>
+          </div>
+
+          <!-- 2-Sigma Jump Detected Badge (Top Right) -->
+          <div class="absolute top-4 right-4 flex items-center gap-space-xs z-30">
+            <div class="bg-surface-container-lowest/90 backdrop-blur-md px-space-sm py-space-xs rounded-lg flex items-center gap-space-xs shadow-lg border border-error/40">
+              <span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+              <span class="font-code-stream text-label-sm text-on-surface uppercase font-bold" id="twoSigmaJumpTag">2-SIGMA JUMP DETECTED</span>
+            </div>
+          </div>
+
+          <!-- Live Cell Telemetry HUD floating on the map (Left Rail Dock) -->
+          <div class="absolute bottom-6 left-6 w-80 md:w-96 bg-surface-container-lowest/95 backdrop-blur-xl p-space-md rounded-xl shadow-2xl z-30 border border-outline-variant/30">
+            <div class="flex items-center justify-between pb-space-xs mb-space-xs border-b border-outline-variant/20">
+              <div class="flex items-center gap-space-xs">
+                <span class="material-symbols-outlined text-primary text-[18px]">radar</span>
+                <span class="font-headline-sm text-headline-sm font-bold text-on-surface" id="hudCellId">Cell #TC-904</span>
+              </div>
+              <span class="bg-error/20 text-error font-code-stream text-label-sm font-bold px-space-xs py-0.5 rounded border border-error/30" id="hudCellType">SUPERCELL</span>
+            </div>
+            <p class="font-body-sm text-body-sm text-on-surface-variant mb-space-sm" id="hudCellSector">Mahanadi-Baitarani / Musi Basin Convective Corridor</p>
+            
+            <div class="grid grid-cols-2 gap-space-xs font-label-md text-label-md">
+              <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                <span class="text-outline font-code-stream text-[10px] uppercase block">Max Reflectivity</span>
+                <div class="flex items-baseline gap-space-xs">
+                  <span class="font-data-display text-label-lg font-bold text-error" id="hudMaxDbz">61.5</span>
+                  <span class="text-on-surface-variant font-code-stream text-code-stream">dBZ (Hail Core)</span>
+                </div>
+              </div>
+              <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                <span class="text-outline font-code-stream text-[10px] uppercase block">Echo Top (ET_18)</span>
+                <div class="flex items-baseline gap-space-xs">
+                  <span class="font-data-display text-label-lg font-bold text-secondary" id="hudEchoTop">17.4</span>
+                  <span class="text-on-surface-variant font-code-stream text-code-stream">km (-76.8°C)</span>
+                </div>
+              </div>
+              <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                <span class="text-outline font-code-stream text-[10px] uppercase block">Total Lightning Rate</span>
+                <div class="flex items-baseline gap-space-xs">
+                  <span class="font-data-display text-label-lg font-bold text-tertiary" id="hudLightningRate">142</span>
+                  <span class="text-on-surface-variant font-code-stream text-code-stream">fl/min <span class="text-error font-bold" id="hudLightningDelta">(+310%)</span></span>
+                </div>
+              </div>
+              <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                <span class="text-outline font-code-stream text-[10px] uppercase block">2-Sigma Jump Alert</span>
+                <div class="flex items-baseline gap-space-xs">
+                  <span class="font-label-md text-label-md font-bold text-error" id="hudJumpStatus">TRIGGERED</span>
+                  <span class="text-on-surface-variant font-code-stream text-code-stream" id="hudJumpLead">T-34m Lead</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-space-sm pt-space-xs flex items-center justify-between text-on-surface-variant font-code-stream text-label-sm border-t border-outline-variant/20">
+              <span id="hudRadarStation">DOPPLER RADAR: BEGUMPET S-BAND</span>
+              <span class="text-primary font-semibold">SWEEP: 0.5° D-POL</span>
+            </div>
+          </div>
+
+          <!-- Floating Base Map & Sensor Layers Panel (Top-Right Floating) -->
+          <div class="map-layer-toolbar z-30">
+            <div class="toolbar-section">
+              <div class="toolbar-title"><i class="fa-solid fa-map-location-dot"></i> Base Map (Google Maps)</div>
+              <select id="baseMapSelect" class="basemap-select" title="Switch Map Background View">
+                <option value="google_hybrid" selected>Google Hybrid (Satellite &amp; Roads)</option>
+                <option value="google_streets">Google Streets (City &amp; Locations)</option>
+                <option value="google_terrain">Google Terrain (Topography)</option>
+                <option value="google_sat">Google Satellite (Imagery Only)</option>
+                <option value="carto_dark">Dark Radar Mode (CartoDB)</option>
+                <option value="osm">OpenStreetMap</option>
+              </select>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-section">
+              <div class="toolbar-title"><i class="fa-solid fa-layer-group"></i> Radar Overlays</div>
+              <label class="layer-toggle-btn active" id="toggleRadarLayer" title="Toggle Doppler Weather Radar Reflectivity">
+                <input type="checkbox" checked id="chkRadar">
+                <span class="toggle-dot radar-dot"></span> Radar (DWR dBZ)
+              </label>
+              <label class="layer-toggle-btn active" id="toggleSatelliteLayer" title="Toggle INSAT-3D Infrared Cloud Top Temperature">
+                <input type="checkbox" checked id="chkSat">
+                <span class="toggle-dot sat-dot"></span> Satellite (INSAT CTT)
+              </label>
+              <label class="layer-toggle-btn active" id="toggleLightningLayer" title="Toggle Real-Time Cloud-to-Ground &amp; Intra-Cloud Lightning Strikes">
+                <input type="checkbox" checked id="chkLtg">
+                <span class="toggle-dot ltg-dot"></span> Lightning Strikes
+              </label>
+              <label class="layer-toggle-btn active" id="toggleTrackLayer" title="Toggle Projected Storm Motion Trajectory &amp; Uncertainty Cones">
+                <input type="checkbox" checked id="chkTrack">
+                <span class="toggle-dot track-dot"></span> Storm Vector &amp; Cone
+              </label>
+            </div>
+          </div>
+
+          <!-- Searched Specific Area Weather Threat Card -->
+          <div class="searched-area-card hidden z-40" id="searchedAreaCard">
+            <div class="searched-area-header">
+              <div class="area-title-group">
+                <i class="fa-solid fa-location-dot area-pin-icon"></i>
+                <div>
+                  <h4 id="searchedAreaTitle">Gachibowli, Hyderabad</h4>
+                  <div class="area-meta-row">
+                    <span class="badge badge-sm" id="searchedAreaCategory">Locality</span>
+                    <span class="area-coords font-mono" id="searchedAreaCoords">17.4401° N, 78.3489° E</span>
+                  </div>
+                </div>
+              </div>
+              <div class="header-right-actions">
+                <span class="badge badge-severe" id="searchedAreaThreatBadge">Severe Threat</span>
+                <button class="card-close-btn" id="btnCloseSearchedArea" onclick="event.stopPropagation(); document.getElementById('searchedAreaCard').classList.add('hidden'); document.getElementById('searchedAreaCard').style.display='none';" title="Close Area Card"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+            </div>
+
+            <div class="searched-area-body">
+              <!-- Threat Score Banner -->
+              <div class="searched-threat-banner" id="searchedThreatBanner">
+                <div class="threat-score-pill">
+                  <span class="threat-pct font-mono" id="searchedThreatScore">96%</span>
+                  <span class="threat-sub">Threat Index</span>
+                </div>
+                <div class="threat-banner-text">
+                  <strong id="searchedThreatHeadline">High-Impact Severe Convective Zone</strong>
+                  <span id="searchedRadarContext">Covered by DWR Begumpet (18.2 km)</span>
+                </div>
+              </div>
+
+              <!-- OpenWeatherMap Real-Time In-Situ Observations Box -->
+              <div class="owm-live-box hidden" id="owmLiveBox">
+                <div class="owm-live-head">
+                  <span><i class="fa-solid fa-satellite-dish text-cyan"></i> Live Surface Observation (OpenWeatherMap)</span>
+                  <span class="live-pulse-dot"></span>
+                </div>
+                <div class="owm-content-row">
+                  <img src="https://openweathermap.org/img/wn/02d.png" id="owmWeatherIcon" class="owm-weather-img" alt="Condition">
+                  <div class="owm-details">
+                    <div class="owm-temp-line">
+                      <strong class="font-mono text-cyan" id="owmTemp">-- °C</strong>
+                      <span class="owm-condition-text" id="owmCondition">Loading...</span>
+                    </div>
+                    <div class="owm-sub-grid">
+                      <span><i class="fa-solid fa-droplet text-blue"></i> <b id="owmHumidity">--%</b> RH</span>
+                      <span><i class="fa-solid fa-wind text-cyan"></i> <b id="owmWind">-- km/h</b></span>
+                      <span><i class="fa-solid fa-gauge text-warning"></i> <b id="owmPressure">-- hPa</b></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Meteorological Metrics Grid -->
+              <div class="searched-metrics-grid">
+                <div class="searched-metric-item">
+                  <span class="lbl"><i class="fa-solid fa-cloud-rain text-accent"></i> Local Radar dBZ</span>
+                  <strong class="val font-mono" id="searchedLocalDbz">-- dBZ</strong>
+                  <span class="sub" id="searchedRainRate">-- mm/h rain</span>
+                </div>
+                <div class="searched-metric-item">
+                  <span class="lbl"><i class="fa-solid fa-cloud-bolt text-danger"></i> Nearest Storm Core</span>
+                  <strong class="val font-mono text-danger" id="searchedNearestCell">-- km</strong>
+                  <span class="sub" id="searchedCellEta"><i class="fa-solid fa-arrow-right"></i> None in range</span>
+                </div>
+                <div class="searched-metric-item">
+                  <span class="lbl"><i class="fa-solid fa-bolt text-warning"></i> Lightning (15km)</span>
+                  <strong class="val font-mono text-warning" id="searchedLightningCount">0 strikes</strong>
+                  <span class="sub">Active CG/IC field</span>
+                </div>
+                <div class="searched-metric-item">
+                  <span class="lbl"><i class="fa-solid fa-satellite text-blue"></i> Cloud Top Temp</span>
+                  <strong class="val font-mono" id="searchedCloudTemp">-- °C</strong>
+                  <span class="sub">Convective cloud status</span>
+                </div>
+              </div>
+
+              <!-- Life-Safety Advisory Directive -->
+              <div class="searched-safety-box" id="searchedSafetyBox">
+                <div class="safety-icon"><i class="fa-solid fa-person-shelter"></i></div>
+                <div class="safety-content">
+                  <strong>NDMA / IMD Area Advisory:</strong>
+                  <p id="searchedSafetyText">Atmospherically stable conditions at this location.</p>
+                </div>
+              </div>
+
+              <!-- Action Controls -->
+              <div class="searched-actions-row">
+                <button class="btn btn-xs btn-outline" id="btnRecenterSearchedArea" title="Center map on this area">
+                  <i class="fa-solid fa-crosshairs"></i> Center
+                </button>
+                <button class="btn btn-xs btn-outline" id="btnSwitchToNearestRadar" title="Switch radar overlay to nearest station">
+                  <i class="fa-solid fa-tower-broadcast"></i> Switch Radar
+                </button>
+                <button class="btn btn-xs btn-outline btn-clear-area" id="btnClearAreaPin" title="Remove search pin">
+                  <i class="fa-solid fa-trash-can"></i> Clear Pin
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Colormap Legends (IMD Radar + Satellite IR) -->
+          <div class="map-legends z-30">
+            <div class="legend-box radar-legend">
+              <div class="legend-title">Rain &amp; Storm Intensity (dBZ)</div>
+              <div class="legend-gradient radar-bar"></div>
+              <div class="legend-labels">
+                <span>Light</span><span>Moderate</span><span>Heavy</span><span>Severe</span><span>Hail</span>
+              </div>
+            </div>
+            <div class="legend-box sat-legend expert-only">
+              <div class="legend-title">INSAT-3D Cloud Top Temp (°C)</div>
+              <div class="legend-gradient sat-bar"></div>
+              <div class="legend-labels">
+                <span>20°</span><span>0°</span><span>-20°</span><span>-40°</span><span>-60° Cold Core</span><span>-80°</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= HIGH-PRECISION NOWCAST PREDICTION HORIZON SCRUBBER ================= -->
+        <div class="w-full mt-space-md p-space-md bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/30">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-sm font-label-md text-label-md">
+            <div class="flex items-center gap-space-sm">
+              <button class="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-md" id="playback-btn">
+                <span class="material-symbols-outlined text-[18px]" id="play-icon" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+              </button>
+              <div>
+                <span class="font-bold text-on-surface tracking-wide uppercase">TEMPORAL NOWCAST ENGINE</span>
+                <span class="text-outline-variant ml-space-xs font-code-stream text-code-stream">ConvLSTM &amp; Swin-Transformer (96.2% Conf)</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-space-md font-code-stream text-label-sm">
+              <span class="flex items-center gap-1 text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-outline"></span>PAST REPLAY</span>
+              <span class="flex items-center gap-1 text-primary font-bold"><span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>T-0 NOW</span>
+              <span class="flex items-center gap-1 text-error font-bold"><span class="w-2 h-2 rounded-full bg-error"></span>HIGH PEAK PREDICTION</span>
+            </div>
+          </div>
+
+          <!-- Scrubber Timeline Bar -->
+          <div class="relative w-full pt-space-xs pb-space-sm">
+            <div class="w-full h-2.5 bg-surface-container rounded-full relative overflow-hidden">
+              <div class="absolute left-0 top-0 h-full w-[45%] bg-primary/40"></div>
+              <div class="absolute left-[45%] top-0 h-full w-[30%] bg-gradient-to-r from-error via-tertiary-container to-secondary/60"></div>
+              <div class="absolute left-[75%] top-0 h-full w-[25%] bg-primary/20"></div>
+            </div>
+
+            <!-- Timeline Step Nodes -->
+            <div class="flex justify-between items-center mt-space-sm font-code-stream text-label-sm text-on-surface-variant" id="timelineStepButtons">
+              <button class="timeline-step-btn hover:text-primary transition-colors text-center" data-index="0">
+                <span class="block text-label-sm font-medium">-60m</span>
+                <span class="text-[9px] text-outline opacity-70">Observed</span>
+              </button>
+              <button class="timeline-step-btn hover:text-primary transition-colors text-center" data-index="1">
+                <span class="block text-label-sm font-medium">-45m</span>
+                <span class="text-[9px] text-outline opacity-70">Observed</span>
+              </button>
+              <button class="timeline-step-btn hover:text-primary transition-colors text-center" data-index="2">
+                <span class="block text-label-sm font-medium">-30m</span>
+                <span class="text-[9px] text-outline opacity-70">Observed</span>
+              </button>
+              <button class="timeline-step-btn hover:text-primary transition-colors text-center" data-index="3">
+                <span class="block text-label-sm font-medium">-15m</span>
+                <span class="text-[9px] text-outline opacity-70">Observed</span>
+              </button>
+              <!-- T-0 Center Active Pulse -->
+              <button class="timeline-step-btn px-space-sm py-0.5 rounded bg-primary text-on-primary font-bold text-center shadow-lg shadow-primary/30" data-index="4" id="btnLiveScrubNode">
+                <span class="block text-label-sm">T-0 NOW</span>
+                <span class="text-[9px] font-mono">Live</span>
+              </button>
+              <!-- Future Extrapolations -->
+              <button class="timeline-step-btn hover:text-error transition-colors text-center text-error font-semibold" data-index="5">
+                <span class="block text-label-sm">+15m</span>
+                <span class="text-[9px] text-outline opacity-70">Nowcast</span>
+              </button>
+              <button class="timeline-step-btn hover:text-error transition-colors text-center text-error font-extrabold bg-error-container/20 px-space-xs rounded" data-index="6">
+                <span class="block text-label-sm">+30m MAX</span>
+                <span class="text-[9px] text-error">Peak</span>
+              </button>
+              <button class="timeline-step-btn hover:text-tertiary transition-colors text-center text-tertiary font-medium" data-index="7">
+                <span class="block text-label-sm">+45m</span>
+                <span class="text-[9px] text-outline opacity-70">Nowcast</span>
+              </button>
+              <button class="timeline-step-btn hover:text-secondary transition-colors text-center" data-index="8">
+                <span class="block text-label-sm">+60m</span>
+                <span class="text-[9px] text-outline opacity-70">Nowcast</span>
+              </button>
+              <button class="timeline-step-btn hover:text-on-surface transition-colors text-center" data-index="9">
+                <span class="block text-label-sm">+90m</span>
+                <span class="text-[9px] text-outline opacity-70">Extended</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= DETAILED THUNDERSTORM & LIGHTNING ANALYTICS GRID ================= -->
+      <section class="w-full px-gutter-lg pb-space-xl expert-only">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-space-md">
+          
+          <!-- COLUMN 1: Total Lightning Jump & Dipole Kinetics -->
+          <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-xl flex flex-col justify-between border border-outline-variant/30">
+            <div>
+              <!-- Header -->
+              <div class="flex items-center justify-between pb-space-xs mb-space-sm border-b border-outline-variant/20">
+                <div class="flex items-center gap-space-xs">
+                  <span class="material-symbols-outlined text-tertiary text-[20px]">electric_bolt</span>
+                  <h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Total Lightning Kinetics</h2>
+                </div>
+                <span class="bg-surface-container px-space-xs py-0.5 rounded font-code-stream text-label-sm text-tertiary font-bold border border-tertiary/20">2-SIGMA ALGORITHM</span>
+              </div>
+
+              <!-- Surge Rate Indicator -->
+              <div class="bg-surface-container-low p-space-sm rounded-lg mb-space-sm border border-outline-variant/20">
+                <div class="flex items-center justify-between text-body-sm mb-space-xs">
+                  <span class="text-on-surface-variant font-code-stream text-code-stream uppercase">SURGE ACCELERATION (dF/dt)</span>
+                  <span class="text-error font-data-display text-label-lg font-bold" id="surgeAccelVal">+58 strikes/min²</span>
+                </div>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">
+                  Threshold (2σ = +42/min²) breached. High confidence indicator of severe ground lightning eruption.
+                </p>
+              </div>
+
+              <!-- Inline SVG Chart: Lightning Flash Rate & Jump Envelope -->
+              <div class="w-full bg-surface-container-low p-space-sm rounded-lg mb-space-sm border border-outline-variant/20">
+                <div class="flex justify-between items-center text-label-sm font-code-stream text-outline mb-space-xs">
+                  <span>FLASHES / MINUTE (60 MIN WINDOW)</span>
+                  <span class="text-tertiary font-semibold" id="peakFlashRate">PEAK: 142 fl/min</span>
+                </div>
+                <svg class="w-full h-32" viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Grid Lines -->
+                  <line class="text-surface-container-highest" stroke="currentColor" stroke-dasharray="2 2" stroke-width="1" x1="0" x2="320" y1="20" y2="20"></line>
+                  <line class="text-surface-container-highest" stroke="currentColor" stroke-dasharray="2 2" stroke-width="1" x1="0" x2="320" y1="60" y2="60"></line>
+                  <line class="text-surface-container-highest" stroke="currentColor" stroke-dasharray="2 2" stroke-width="1" x1="0" x2="320" y1="100" y2="100"></line>
+                  <!-- 2-Sigma Threshold Line -->
+                  <line stroke="#ef4444" stroke-dasharray="4 3" stroke-width="1.5" x1="0" x2="320" y1="48" y2="48"></line>
+                  <text class="fill-error font-code-stream text-[9px] font-bold" x="6" y="44">2-SIGMA THRESHOLD (108 fl/min)</text>
+                  <!-- Flash Rate Gradient Area Fill -->
+                  <defs>
+                    <linearGradient id="flashAreaGrad" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.45"></stop>
+                      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"></stop>
+                    </linearGradient>
+                  </defs>
+                  <path d="M 0 105 Q 40 102, 80 98 T 160 85 T 220 70 Q 250 55, 275 22 T 320 12 L 320 115 L 0 115 Z" fill="url(#flashAreaGrad)"></path>
+                  <path d="M 0 105 Q 40 102, 80 98 T 160 85 T 220 70 Q 250 55, 275 22 T 320 12" fill="none" stroke="#ffc174" stroke-width="2.5"></path>
+                  <!-- Point of Jump Marker -->
+                  <circle cx="275" cy="22" fill="#ef4444" r="4.5" stroke="#ffffff" stroke-width="1.5"></circle>
+                  <text class="fill-error font-code-stream text-[10px] font-extrabold" x="225" y="16">JUMP DETECTED</text>
+                </svg>
+              </div>
+
+              <!-- Micro Telemetry: IC to CG Ratio & Polarity Breakdown -->
+              <div class="grid grid-cols-2 gap-space-sm mb-space-sm font-label-md text-label-md">
+                <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                  <span class="text-outline font-code-stream text-[10px] uppercase block">IC : CG Strike Ratio</span>
+                  <span class="font-data-display text-label-lg font-bold text-secondary" id="icCgRatio">4.8 : 1.0</span>
+                  <span class="text-on-surface-variant font-code-stream text-[10px] block mt-0.5">Precursor Phase Active</span>
+                </div>
+                <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                  <span class="text-outline font-code-stream text-[10px] uppercase block">Polarity Split</span>
+                  <div class="flex items-center gap-space-xs mt-1">
+                    <span class="font-label-md text-label-md font-bold text-error" id="cgNegPct">-CG: 88%</span>
+                    <span class="text-outline-variant">|</span>
+                    <span class="font-label-md text-label-md font-bold text-primary" id="cgPosPct">+CG: 12%</span>
+                  </div>
+                  <span class="text-on-surface-variant font-code-stream text-[10px] block mt-0.5">High Peak Current (-92kA avg)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-surface-container px-space-sm py-space-xs rounded-lg flex items-center justify-between text-on-surface-variant font-code-stream text-label-sm border border-outline-variant/20">
+              <span>GLD360 / LINET INGEST NODE</span>
+              <span class="text-primary font-bold">ACCURACY ±120m</span>
+            </div>
+          </div>
+
+          <!-- COLUMN 2: Convective Microphysics & Dual-Pol Ingest -->
+          <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-xl flex flex-col justify-between border border-outline-variant/30">
+            <div>
+              <!-- Header -->
+              <div class="flex items-center justify-between pb-space-xs mb-space-sm border-b border-outline-variant/20">
+                <div class="flex items-center gap-space-xs">
+                  <span class="material-symbols-outlined text-primary text-[20px]">storm</span>
+                  <h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Convective Microphysics</h2>
+                </div>
+                <span class="bg-surface-container px-space-xs py-0.5 rounded font-code-stream text-label-sm text-primary font-bold border border-primary/20">DUAL-POL S-BAND</span>
+              </div>
+
+              <!-- Vertical Cross-Section Radar Sounding Representation -->
+              <div class="bg-surface-container-low p-space-sm rounded-lg mb-space-sm border border-outline-variant/20">
+                <div class="flex justify-between items-center text-label-sm font-code-stream text-on-surface-variant mb-space-xs">
+                  <span class="text-on-surface font-semibold">HYDROMETEOR CHARGING LAYER (ZDR / KDP)</span>
+                  <span class="text-error font-bold">-10°C to -40°C ISOTHERMAL</span>
+                </div>
+                <!-- Altitude Charging Profile Visual -->
+                <div class="relative w-full h-36 bg-surface-container rounded-lg p-space-xs flex flex-col justify-between overflow-hidden border border-outline-variant/30">
+                  <div class="absolute top-4 left-0 right-0 h-16 bg-error-container/20 border-l-4 border-error flex items-center justify-between px-space-sm pointer-events-none">
+                    <div class="flex flex-col">
+                      <span class="font-label-sm text-label-sm text-error font-bold uppercase tracking-wider">Graupel / Hail Charging Core</span>
+                      <span class="font-code-stream text-[10px] text-on-surface-variant">Non-inductive charge separation (Ice crystals + Rime)</span>
+                    </div>
+                    <span class="font-code-stream text-label-sm text-error font-extrabold">6.0km – 10.5km</span>
+                  </div>
+                  <div class="flex justify-between text-outline font-code-stream text-[10px] z-10">
+                    <span>16 km (Tropopause)</span>
+                    <span class="text-secondary">-76.8°C Overshooting Dome</span>
+                  </div>
+                  <div class="flex justify-between text-outline font-code-stream text-[10px] z-10 pt-8">
+                    <span>8.5 km (Max Separation)</span>
+                    <span class="text-tertiary">KDP: 3.4 deg/km</span>
+                  </div>
+                  <div class="flex justify-between text-outline font-code-stream text-[10px] z-10">
+                    <span>0 km (Surface Ground)</span>
+                    <span class="text-primary">ZDR: 2.8 dB</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Severe Updraft & Kinetic Energy Gauges -->
+              <div class="grid grid-cols-2 gap-space-sm mb-space-sm font-label-md text-label-md">
+                <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                  <span class="text-outline font-code-stream text-[10px] uppercase block">Updraft Velocity (w)</span>
+                  <div class="flex items-baseline gap-space-xs">
+                    <span class="font-data-display text-label-lg font-bold text-primary" id="updraftVel">32.4</span>
+                    <span class="text-on-surface-variant font-code-stream text-code-stream">m/s (Extreme)</span>
+                  </div>
+                  <span class="text-on-surface-variant font-code-stream text-[10px] block mt-0.5">Sustains 5.2cm hail suspend</span>
+                </div>
+                <div class="bg-surface-container-low p-space-xs rounded-lg border border-outline-variant/20">
+                  <span class="text-outline font-code-stream text-[10px] uppercase block">VIL Density</span>
+                  <div class="flex items-baseline gap-space-xs">
+                    <span class="font-data-display text-label-lg font-bold text-tertiary" id="vilDensity">4.18</span>
+                    <span class="text-on-surface-variant font-code-stream text-code-stream">g/m³</span>
+                  </div>
+                  <span class="text-on-surface-variant font-code-stream text-[10px] block mt-0.5">Hail Probability: 94%</span>
+                </div>
+              </div>
+
+              <div class="bg-surface-container-low p-space-xs rounded-lg mb-space-sm border border-outline-variant/20">
+                <div class="flex justify-between text-code-stream font-code-stream mb-1">
+                  <span class="text-on-surface-variant">DOWNDRAFT CONVECTIVE AVAILABLE ENERGY (DCAPE):</span>
+                  <span class="text-error font-bold" id="dcapeVal">1,240 J/kg (Severe Microburst Risk)</span>
+                </div>
+                <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                  <div class="w-[84%] h-full bg-error rounded-full" id="dcapeBar"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-surface-container px-space-sm py-space-xs rounded-lg flex items-center justify-between text-on-surface-variant font-code-stream text-label-sm border border-outline-variant/20">
+              <span>BEGUMPET / HYD DUAL RADAR INGEST</span>
+              <span class="text-on-surface font-semibold">SYNCHRONIZED (0.5° &amp; 1.5°)</span>
+            </div>
+          </div>
+
+          <!-- COLUMN 3: District Vulnerability & Warning Dissemination -->
+          <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-xl flex flex-col justify-between border border-outline-variant/30">
+            <div>
+              <!-- Header -->
+              <div class="flex items-center justify-between pb-space-xs mb-space-sm border-b border-outline-variant/20">
+                <div class="flex items-center gap-space-xs">
+                  <span class="material-symbols-outlined text-error text-[20px]">podcasts</span>
+                  <h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Target Vulnerability &amp; Siren Grid</h2>
+                </div>
+                <span class="bg-error-container text-on-error px-space-xs py-0.5 rounded font-code-stream text-label-sm font-extrabold animate-pulse border border-error/50">SIREN ARMED</span>
+              </div>
+
+              <!-- Impact Sector Stack -->
+              <div class="space-y-space-xs mb-space-sm" id="impactSectorsList">
+                <div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between border border-outline-variant/20">
+                  <div>
+                    <div class="flex items-center gap-space-xs">
+                      <span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+                      <span class="font-label-md text-label-md font-bold text-on-surface">Gachibowli &amp; Hitec City Corridor</span>
+                    </div>
+                    <span class="text-on-surface-variant font-code-stream text-[11px] block mt-0.5">High Density Strike Cluster Projected</span>
+                  </div>
+                  <div class="text-right">
+                    <span class="bg-error/20 text-error font-code-stream text-label-sm font-bold px-space-xs py-0.5 rounded border border-error/30">RED (T+18m)</span>
+                    <span class="block text-[10px] text-outline font-code-stream mt-0.5">Pop: 1.1M</span>
+                  </div>
+                </div>
+                <div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between border border-outline-variant/20">
+                  <div>
+                    <div class="flex items-center gap-space-xs">
+                      <span class="w-2.5 h-2.5 rounded-full bg-tertiary-container"></span>
+                      <span class="font-label-md text-label-md font-bold text-on-surface">Secunderabad &amp; Begumpet Airport</span>
+                    </div>
+                    <span class="text-on-surface-variant font-code-stream text-[11px] block mt-0.5">Terminal Aerodrome Microburst Alert</span>
+                  </div>
+                  <div class="text-right">
+                    <span class="bg-tertiary-container/30 text-tertiary font-code-stream text-label-sm font-bold px-space-xs py-0.5 rounded border border-tertiary/30">ORANGE (T+35m)</span>
+                    <span class="block text-[10px] text-outline font-code-stream mt-0.5">Pop: 1.4M</span>
+                  </div>
+                </div>
+                <div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between border border-outline-variant/20">
+                  <div>
+                    <div class="flex items-center gap-space-xs">
+                      <span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+                      <span class="font-label-md text-label-md font-bold text-on-surface">Medchal-Malkajgiri Agro Belt</span>
+                    </div>
+                    <span class="text-on-surface-variant font-code-stream text-[11px] block mt-0.5">Open Field Strike Exposure High</span>
+                  </div>
+                  <div class="text-right">
+                    <span class="bg-error/20 text-error font-code-stream text-label-sm font-bold px-space-xs py-0.5 rounded border border-error/30">RED (T+42m)</span>
+                    <span class="block text-[10px] text-outline font-code-stream mt-0.5">Pop: 0.9M</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Infrastructure at Risk Stats -->
+              <div class="bg-surface-container-low p-space-sm rounded-lg mb-space-sm border border-outline-variant/20">
+                <span class="text-outline font-code-stream text-[10px] uppercase block mb-1">Infrastructure Assets in Predicted Swath</span>
+                <div class="flex items-center justify-between font-label-md text-label-md">
+                  <span class="text-on-surface font-semibold">14 Substation Grids</span>
+                  <span class="text-outline-variant">•</span>
+                  <span class="text-on-surface font-semibold">280 Rural Schools</span>
+                  <span class="text-outline-variant">•</span>
+                  <span class="text-error font-bold">1 Airport Ground Stop</span>
+                </div>
+              </div>
+
+              <!-- Automated Dissemination Pipeline Status -->
+              <div class="space-y-1.5 font-code-stream text-label-sm">
+                <div class="flex items-center justify-between bg-surface-container px-space-sm py-1 rounded border border-outline-variant/15">
+                  <span class="text-on-surface-variant">CAP v1.2 XML PAYLOAD:</span>
+                  <span class="text-primary font-bold">GENERATED (ID: HYD-CAP-9042)</span>
+                </div>
+                <div class="flex items-center justify-between bg-surface-container px-space-sm py-1 rounded border border-outline-variant/15">
+                  <span class="text-on-surface-variant">CELL BROADCAST (C-DOT):</span>
+                  <span class="text-tertiary font-bold">QUEUED FOR 3 TOWER ARRAYS</span>
+                </div>
+                <div class="flex items-center justify-between bg-surface-container px-space-sm py-1 rounded border border-outline-variant/15">
+                  <span class="text-on-surface-variant">SEOC CIVIL SIRENS (12 NODES):</span>
+                  <span class="text-error font-bold">TRIGGER ARMED (AUTO T-15m)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-space-sm pt-space-xs">
+              <button class="w-full bg-error hover:bg-error/90 text-on-error py-space-xs rounded-lg font-label-md text-label-md font-bold tracking-wide shadow-lg shadow-error/30 transition-all flex items-center justify-center gap-space-xs active:scale-95" id="dispatch-siren-btn">
+                <span class="material-symbols-outlined text-[18px]">emergency</span>
+                <span>TRANSMIT ALL-HAZARD BROADCAST NOW</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
   </main>
 
-  <!-- ================= Interactive User Guide & Quick Tour Modal ================= -->
+  <!-- ================= AI MET COPILOT / CHATBOT WIDGET ================= -->
+  <div id="copilot-widget" class="fixed bottom-6 right-6 z-50 w-[420px] rounded-xl bg-surface-container-lowest/95 backdrop-blur-xl border border-primary/30 shadow-[0_0_24px_rgba(56,189,248,0.25)] flex flex-col overflow-hidden transition-all duration-300">
+    <!-- Header -->
+    <div class="p-space-sm bg-surface-container-low flex items-center justify-between border-b border-outline-variant/30 select-none">
+      <div class="flex items-center gap-space-xs">
+        <div class="w-8 h-8 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary shadow-[0_0_8px_rgba(56,189,248,0.35)]">
+          <span class="material-symbols-outlined text-[18px] animate-pulse">neurology</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-label-md text-label-md font-bold text-on-surface tracking-wide uppercase">VAJRA-BOT // AI MET COPILOT</span>
+            <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+          </div>
+          <div class="flex items-center gap-space-xs">
+            <span class="font-code-stream text-[9px] text-primary uppercase font-semibold">Swin-Transformer + Llama-3-Met v3.2</span>
+            <span class="text-outline-variant font-code-stream text-[9px]">•</span>
+            <span class="font-code-stream text-[9px] text-tertiary font-medium">Online &amp; Synced</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1">
+        <button class="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" id="btnResetCopilot" title="Clear History">
+          <span class="material-symbols-outlined text-[15px]">restart_alt</span>
+        </button>
+        <button class="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" id="btnToggleCopilotWindow" title="Toggle Window">
+          <span class="material-symbols-outlined text-[18px]" id="copilotToggleIcon">keyboard_arrow_down</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Telemetry Ingest Badges -->
+    <div class="bg-surface-container px-space-sm py-1.5 flex flex-wrap items-center justify-between border-b border-outline-variant/20 gap-1 font-code-stream text-[10px]">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <span class="bg-surface-container-high text-primary px-space-xs py-0.5 rounded border border-primary/20">Radar: 0.5° D-Pol</span>
+        <span class="bg-surface-container-high text-secondary px-space-xs py-0.5 rounded border border-outline-variant/20">INSAT-3DR: -76.8°C CTT</span>
+        <span class="bg-surface-container-high text-outline px-space-xs py-0.5 rounded">Lead: T-32m</span>
+      </div>
+      <span class="bg-error/20 text-error font-bold px-1.5 py-0.5 rounded flex items-center gap-1 animate-pulse border border-error/30">
+        <span class="w-1.5 h-1.5 rounded-full bg-error"></span>2-SIGMA ACTIVE
+      </span>
+    </div>
+
+    <!-- Messages Body Container -->
+    <div class="p-space-sm space-y-space-sm max-h-[360px] overflow-y-auto" id="copilotMessages">
+      <!-- Default Bot Intro Message -->
+      <div class="flex items-start gap-space-xs">
+        <div class="w-6 h-6 rounded-lg bg-primary/20 flex-shrink-0 flex items-center justify-center text-primary mt-0.5">
+          <span class="material-symbols-outlined text-[14px]">smart_toy</span>
+        </div>
+        <div class="bg-surface-container-low p-space-sm rounded-xl rounded-tl-none border border-outline-variant/25 text-body-sm leading-relaxed shadow-sm space-y-space-xs max-w-[88%]">
+          <div class="flex items-center gap-1 text-error font-bold font-code-stream text-[11px]">
+            <span class="material-symbols-outlined text-[14px]">warning</span>
+            <span>Ground Strike Surge Imminent</span>
+          </div>
+          <p class="text-on-surface text-[12px]">
+            2-Sigma lightning jump breach detected (<span class="text-error font-bold">+58 fl/min²</span>). Mixed-phase charging layer (6–10.5 km) reveals ZDR depression (<span class="text-tertiary font-semibold">-0.4 dB</span>) indicating hail aloft. Recommending immediate <strong class="text-primary font-semibold">CAP v1.2 dissemination</strong> with <span class="text-primary font-bold">32-min lead time</span>.
+          </p>
+          <div class="grid grid-cols-3 gap-1 pt-1 font-code-stream text-[10px]">
+            <div class="bg-surface-container p-1 rounded"><span class="text-outline block">CONFIDENCE</span><span class="text-primary font-bold text-[11px]">96.4%</span></div>
+            <div class="bg-surface-container p-1 rounded"><span class="text-outline block">PEAK SURGE</span><span class="text-tertiary font-bold text-[11px]">142 fl/min</span></div>
+            <div class="bg-surface-container p-1 rounded"><span class="text-outline block">THREAT ZONE</span><span class="text-error font-bold text-[11px]">4.8 km rad</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Prompt Chips -->
+    <div class="px-space-sm py-1.5 bg-surface-container-low/70 border-t border-outline-variant/20 flex flex-wrap gap-1" id="copilotChips">
+      <button class="bg-surface-container hover:bg-surface-container-high text-primary hover:text-on-surface px-space-xs py-1 rounded font-code-stream text-[10px] border border-primary/25 transition-all flex items-center gap-1" data-query="Draft CAP v1.2 XML emergency bulletin for active convective cell">
+        <span class="material-symbols-outlined text-[11px]">assignment_turned_in</span>
+        <span>Draft CAP v1.2 XML</span>
+      </button>
+      <button class="bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface px-space-xs py-1 rounded font-code-stream text-[10px] border border-outline-variant/25 transition-all flex items-center gap-1" data-query="Explain ZDR anomaly and hail core aloft in simple terms">
+        <span class="material-symbols-outlined text-[11px]">analytics</span>
+        <span>Explain ZDR Anomaly</span>
+      </button>
+      <button class="bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface px-space-xs py-1 rounded font-code-stream text-[10px] border border-outline-variant/25 transition-all flex items-center gap-1" data-query="Extrapolate projected +45m swath and storm arrival ETA">
+        <span class="material-symbols-outlined text-[11px]">timeline</span>
+        <span>Extrapolate +45m Swath</span>
+      </button>
+      <button class="bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface px-space-xs py-1 rounded font-code-stream text-[10px] border border-outline-variant/25 transition-all flex items-center gap-1" data-query="What is the substation and rural school threat risk?">
+        <span class="material-symbols-outlined text-[11px]">map</span>
+        <span>Substation Threat Map</span>
+      </button>
+    </div>
+
+    <!-- Input Form -->
+    <form class="p-space-sm bg-surface-container-low border-t border-outline-variant/30 flex items-center gap-space-xs" id="copilotForm">
+      <div class="relative flex-1">
+        <input 
+          type="text" 
+          id="copilotInput"
+          placeholder="Ask Met Copilot or issue CAP directive..." 
+          class="w-full bg-surface-container-lowest text-on-surface placeholder:text-outline text-body-sm px-space-sm py-2 rounded-lg border border-outline-variant/40 focus:border-primary focus:outline-none font-body-sm text-[12px] pr-14"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          <button type="button" class="text-outline-variant hover:text-primary transition-colors" title="Attach sounding / radar cut"><span class="material-symbols-outlined text-[15px]">attachment</span></button>
+          <button type="button" class="text-outline-variant hover:text-primary transition-colors" title="Voice Command"><span class="material-symbols-outlined text-[15px]">mic</span></button>
+        </div>
+      </div>
+      <button type="submit" class="w-9 h-9 rounded-lg bg-primary hover:bg-primary-container text-on-primary flex items-center justify-center shadow-lg shadow-primary/30 transition-all active:scale-95 flex-shrink-0" title="Transmit Prompt">
+        <span class="material-symbols-outlined text-[18px]">electric_bolt</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- ================= OPERATIONAL FOOTER ================= -->
+  <footer class="w-full bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-2px_16px_rgba(0,0,0,0.4)] py-space-sm border-t border-outline-variant/20">
+    <div class="w-full px-gutter-lg flex flex-col md:flex-row items-center justify-between gap-space-sm font-label-sm text-label-sm">
+      <div class="flex flex-wrap items-center gap-space-md text-on-surface-variant">
+        <span class="flex items-center gap-space-xs text-on-surface font-semibold">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>RADAR INGEST: <span class="font-code-stream text-code-stream text-primary font-bold">184ms</span>
+        </span>
+        <span class="text-outline-variant">•</span>
+        <span class="flex items-center gap-space-xs text-on-surface font-semibold">
+          LIGHTNING TELEMETRY (LINET/GLD360): <span class="font-code-stream text-code-stream text-primary font-bold">42ms</span>
+        </span>
+        <span class="text-outline-variant">•</span>
+        <span class="flex items-center gap-space-xs text-on-surface font-semibold">
+          AI CELL VECTOR PREDICTOR: <span class="font-code-stream text-code-stream text-primary font-bold">310ms</span>
+        </span>
+      </div>
+      <div class="flex items-center gap-space-md text-on-surface-variant">
+        <span class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-space-xs rounded text-primary font-bold uppercase tracking-wider border border-outline-variant/20">
+          <span class="material-symbols-outlined text-[14px]">verified</span>IMD / MoES COMPLIANCE VERIFIED
+        </span>
+        <span class="text-outline font-code-stream text-code-stream">NODE: ND-01-OPERATIONAL</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= MODALS ================= -->
+  
+  <!-- 1. User Guide Modal -->
   <div class="modal-overlay hidden" id="guideModal">
     <div class="modal-container large-modal">
       <div class="modal-header">
@@ -652,113 +1052,100 @@
           <button class="subtab-btn" id="guideTab4Btn"><i class="fa-solid fa-sliders"></i> 4. What-If Simulator</button>
         </div>
 
-        <!-- Guide Tab 1: Getting Started -->
         <div id="guideTab1Content" class="guide-tab-content">
           <div class="guide-hero-banner">
             <h3>Welcome to Aerocast-AI Nowcasting</h3>
-            <p>Aerocast-AI delivers automated 0-90 minute localized forecasts of severe convective storms, lightning strikes, and damaging winds across India using multi-sensor radar and satellite AI models.</p>
+            <p>Aerocast-AI delivers automated 0-120 minute localized forecasts of severe convective storms, lightning strikes, and damaging winds across India using multi-sensor radar and satellite AI models.</p>
           </div>
           <div class="guide-steps-grid">
             <div class="guide-step-card">
               <div class="step-num">1</div>
               <h4>Search Area or Select Radar</h4>
-              <p>Type any locality, city, district, or landmark (e.g. <em>Gachibowli, Salt Lake, Whitefield</em>) in the search bar, or choose from 8 DWR stations.</p>
+              <p>Type any locality, city, district, or landmark in the search bar, or choose from 8 DWR stations.</p>
             </div>
             <div class="guide-step-card">
               <div class="step-num">2</div>
-              <h4>Switch Lead Times</h4>
-              <p>Click <strong>+30m</strong>, <strong>+60m</strong>, or <strong>+90m</strong> in the top header to inspect forecast horizons and threat probabilities.</p>
+              <h4>Scrub the Timeline</h4>
+              <p>Use the scrubber or press <kbd>Space</kbd> to replay storm evolution from -60m up to +120m.</p>
             </div>
             <div class="guide-step-card">
               <div class="step-num">3</div>
-              <h4>Scrub the Timeline</h4>
-              <p>Use the bottom slider or press <kbd>Space</kbd> to play animated storm cell advection from 1 hour in the past (t-60m) into the future (+90m).</p>
+              <h4>Ask AI Met Copilot</h4>
+              <p>Click the bottom-right AI Copilot widget to ask questions or draft CAP emergency alerts.</p>
             </div>
             <div class="guide-step-card">
               <div class="step-num">4</div>
-              <h4>Inspect Alerts &amp; Directives</h4>
-              <p>Review active CAP warnings in the right sidebar with official NDMA disaster safety advice for the public.</p>
+              <h4>Google Maps Background</h4>
+              <p>Use the Base Map switcher to toggle between Google Hybrid, Streets, Terrain, and Dark Mode.</p>
             </div>
           </div>
         </div>
 
-        <!-- Guide Tab 2: Radar & Maps -->
         <div id="guideTab2Content" class="guide-tab-content hidden">
           <h3 class="section-title">Understanding Map Colors &amp; Radar Reflectivity (dBZ)</h3>
-          <p class="modal-desc">Radar reflectivity measures the concentration and size of precipitation particles in the atmosphere:</p>
+          <p class="modal-desc">Radar reflectivity measures precipitation density:</p>
           <div class="guide-legend-table">
             <div class="guide-legend-row">
               <span class="guide-color-box c-green"></span>
               <strong>15 - 30 dBZ (Light to Moderate Rain)</strong>
-              <span>Stratiform rain or early developing shower. Minimal lightning risk.</span>
+              <span>Stratiform rain or shower. Minimal lightning risk.</span>
             </div>
             <div class="guide-legend-row">
               <span class="guide-color-box c-yellow"></span>
-              <strong>35 - 45 dBZ (Heavy Convective Rain)</strong>
-              <span>Convective initiation. Updrafts carrying substantial moisture aloft.</span>
+              <strong>35 - 45 dBZ (Heavy Rain)</strong>
+              <span>Convective initiation. Strong updrafts.</span>
             </div>
             <div class="guide-legend-row">
               <span class="guide-color-box c-red"></span>
               <strong>50 - 58 dBZ (Severe Thunderstorm)</strong>
-              <span>Vigorous convective core, intense cloud-to-ground lightning, and gusty winds.</span>
+              <span>Intense lightning and gusty downbursts.</span>
             </div>
             <div class="guide-legend-row">
               <span class="guide-color-box c-extreme"></span>
-              <strong>60+ dBZ (Violent Hail / Severe Supercell)</strong>
-              <span>Extremely dangerous storm core with high probability of large hail and microbursts.</span>
+              <strong>60+ dBZ (Violent Hail / Supercell)</strong>
+              <span>High probability of large hail and microbursts.</span>
             </div>
           </div>
         </div>
 
-        <!-- Guide Tab 3: Lightning & Physics -->
         <div id="guideTab3Content" class="guide-tab-content hidden">
           <h3 class="section-title">Key Physical Indicators Explained</h3>
           <div class="guide-glossary-grid">
             <div class="glossary-item">
               <h4><i class="fa-solid fa-bolt text-warning"></i> Schultz 2σ Lightning Jump</h4>
-              <p>A sudden exponential surge in total lightning flash rate (dF/dt ≥ 2.0σ) that precedes severe downbursts and hail by <strong>15 to 30 minutes</strong>.</p>
+              <p>Sudden exponential surge in total lightning flash rate (dF/dt ≥ 2.0σ) preceding severe downbursts by 15-30 minutes.</p>
             </div>
             <div class="glossary-item">
               <h4><i class="fa-solid fa-fire text-danger"></i> CAPE (Updraft Energy)</h4>
-              <p>Convective Available Potential Energy (J/kg). High CAPE (>2000 J/kg) provides the thermodynamic fuel needed for explosive thunderstorm updrafts.</p>
+              <p>Convective Available Potential Energy (>2000 J/kg) powers explosive thunderstorm updrafts.</p>
             </div>
             <div class="glossary-item">
               <h4><i class="fa-solid fa-shield-halved text-cyan"></i> CIN (Convective Inhibition)</h4>
-              <p>The atmospheric "lid" or barrier. Low CIN (<50 J/kg) allows storms to trigger easily, while high CIN caps convection.</p>
+              <p>Atmospheric barrier lid. Low CIN allows storms to erupt rapidly.</p>
             </div>
             <div class="glossary-item">
-              <h4><i class="fa-solid fa-satellite text-blue"></i> Satellite Cloud Top Cooling</h4>
-              <p>INSAT-3D measures cloud-top infrared temperature. Fast cooling (≤ -5 °C / 15min) indicates rapidly climbing updrafts penetrating the tropopause.</p>
+              <h4><i class="fa-solid fa-satellite text-blue"></i> Cloud Top Cooling</h4>
+              <p>INSAT-3D rapid cooling (≤ -5 °C / 15min) tracks vigorous updraft ascent.</p>
             </div>
           </div>
         </div>
 
-        <!-- Guide Tab 4: What-If Simulator -->
         <div id="guideTab4Content" class="guide-tab-content hidden">
-          <h3 class="section-title">Using the "What-If" AI Sandbox Simulator</h3>
-          <p class="modal-desc">Test how the machine learning model reacts to custom weather scenarios in real-time:</p>
-          <div class="guide-sandbox-tips">
-            <div class="tip-card">
-              <i class="fa-solid fa-wand-magic-sparkles text-accent"></i>
-              <h4>1-Click Presets</h4>
-              <p>Click any of the preset buttons in the Sandbox (e.g. <em>Nor'wester Squall</em>, <em>Fair Weather</em>) to instantly load realistic meteorological profiles.</p>
-            </div>
-            <div class="tip-card">
-              <i class="fa-solid fa-sliders text-warning"></i>
-              <h4>Interactive Sliders</h4>
-              <p>Drag the sliders to test specific thresholds (e.g. increase CAPE to 3500 and lower CIN to 15 to trigger an instant severe prediction reaction).</p>
-            </div>
-          </div>
+          <h3 class="section-title">Using the What-If Simulator</h3>
+          <p class="modal-desc">Simulate custom atmospheric scenarios in real-time with our tuned XGBoost/ConvLSTM models.</p>
         </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnDismissGuide">Close Guide</button>
       </div>
     </div>
   </div>
 
-  <!-- Interactive Modal: What-If AI Sandbox -->
+  <!-- 2. "What-If" AI Prediction Sandbox Modal -->
   <div class="modal-overlay hidden" id="sandboxModal">
-    <div class="modal-container">
+    <div class="modal-container large-modal">
       <div class="modal-header">
-        <h2><i class="fa-solid fa-sliders text-accent"></i> Interactive "What-If" AI Prediction Sandbox</h2>
+        <h2><i class="fa-solid fa-flask text-accent"></i> Interactive "What-If" AI Prediction Sandbox</h2>
         <button class="modal-close" id="btnCloseSandbox"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
@@ -766,334 +1153,202 @@
           Adjust atmospheric and radar parameters below to simulate storm triggers in real-time. The tuned XGBoost model will compute instant probabilities and risk scores.
         </p>
 
-        <!-- 1-Click Scenario Presets Bar -->
-        <div class="sandbox-presets-bar">
-          <span class="presets-lbl"><i class="fa-solid fa-wand-magic-sparkles"></i> 1-Click Presets:</span>
-          <button class="btn btn-xs btn-preset" id="presetNorwester"><i class="fa-solid fa-bolt text-danger"></i> Nor'wester Squall</button>
-          <button class="btn btn-xs btn-preset" id="presetSevere"><i class="fa-solid fa-cloud-bolt text-warning"></i> Severe Supercell</button>
-          <button class="btn btn-xs btn-preset" id="presetModerate"><i class="fa-solid fa-cloud-rain text-accent"></i> Moderate Shower</button>
-          <button class="btn btn-xs btn-preset" id="presetFair"><i class="fa-solid fa-sun text-success"></i> Fair Weather</button>
-          <button class="btn btn-xs btn-outline" id="presetReset"><i class="fa-solid fa-arrow-rotate-left"></i> Reset to Live</button>
+        <!-- Presets Row -->
+        <div class="sandbox-presets-row">
+          <span class="presets-label"><i class="fa-solid fa-wand-magic-sparkles"></i> 1-Click Meteorological Presets:</span>
+          <div class="preset-buttons">
+            <button class="btn btn-sm btn-outline" id="presetFair">Fair Weather</button>
+            <button class="btn btn-sm btn-outline" id="presetDeveloping">Developing Shower</button>
+            <button class="btn btn-sm btn-outline btn-highlight" id="presetSevere">Severe Supercell</button>
+            <button class="btn btn-sm btn-outline btn-alert" id="presetNorwester">Nor'wester Squall</button>
+          </div>
         </div>
 
+        <!-- Sliders Grid -->
         <div class="sandbox-grid">
-          <!-- Sliders -->
-          <div class="sandbox-inputs">
-            <div class="input-control">
-              <div class="input-lbl-row">
-                <label for="sliderMaxDbz">Radar Core Reflectivity (max_reflectivity_dbz)</label>
-                <span class="input-val font-mono" id="valMaxDbz">54 dBZ</span>
-              </div>
-              <input type="range" id="sliderMaxDbz" min="10" max="70" value="54" step="1">
+          <div class="slider-control-group">
+            <div class="slider-label-row">
+              <label for="sbMaxDbz"><i class="fa-solid fa-tower-broadcast text-accent"></i> Max Reflectivity (dBZ):</label>
+              <span class="slider-val font-mono" id="sbMaxDbzVal">55.0 dBZ</span>
             </div>
-
-            <div class="input-control">
-              <div class="input-lbl-row">
-                <label for="sliderCape">CAPE Instability (cape_j_kg)</label>
-                <span class="input-val font-mono" id="valCape">2800 J/kg</span>
-              </div>
-              <input type="range" id="sliderCape" min="100" max="4500" value="2800" step="50">
-            </div>
-
-            <div class="input-control">
-              <div class="input-lbl-row">
-                <label for="sliderCin">Convective Inhibition (cin_j_kg)</label>
-                <span class="input-val font-mono" id="valCin">25 J/kg</span>
-              </div>
-              <input type="range" id="sliderCin" min="0" max="250" value="25" step="5">
-            </div>
-
-            <div class="input-control">
-              <div class="input-lbl-row">
-                <label for="sliderCtt">Cloud Top Temperature (cloud_top_temp_c)</label>
-                <span class="input-val font-mono" id="valCtt">-68 °C</span>
-              </div>
-              <input type="range" id="sliderCtt" min="-85" max="15" value="-68" step="1">
-            </div>
-
-            <div class="input-control">
-              <div class="input-lbl-row">
-                <label for="sliderCooling">Cloud Cooling Rate (cloud_cooling_rate_15min)</label>
-                <span class="input-val font-mono" id="valCooling">-8.0 °C/15m</span>
-              </div>
-              <input type="range" id="sliderCooling" min="-18" max="4" value="-8" step="0.5">
-            </div>
-
-            <div class="input-control">
-              <div class="input-lbl-row">
-                <label for="sliderFlashRate">Lightning Flash Rate (flash_rate_per_min)</label>
-                <span class="input-val font-mono" id="valFlashRate">22 f/min</span>
-              </div>
-              <input type="range" id="sliderFlashRate" min="0" max="90" value="22" step="1">
-            </div>
-
-            <div class="input-control">
-              <div class="input-lbl-row">
-                <label for="sliderJump">Lightning Jump (lightning_jump_sigma)</label>
-                <span class="input-val font-mono" id="valJump">2.6 σ</span>
-              </div>
-              <input type="range" id="sliderJump" min="0" max="5" value="2.6" step="0.1">
-            </div>
+            <input type="range" id="sbMaxDbz" min="0" max="75" step="0.5" value="55.0" class="custom-range">
+            <div class="slider-range-limits"><span>0 dBZ</span><span>40 (Convection)</span><span>75 dBZ</span></div>
           </div>
 
-          <!-- Real-Time Sandbox Output -->
-          <div class="sandbox-output">
-            <h3><i class="fa-solid fa-microchip"></i> Live AI Prediction Output</h3>
-            <div class="sandbox-results-card">
-              <div class="res-row">
-                <span>30-Min Thunderstorm Prob:</span>
-                <strong class="font-mono text-danger" id="res30mProb">--%</strong>
+          <div class="slider-control-group">
+            <div class="slider-label-row">
+              <label for="sbLtgRate"><i class="fa-solid fa-bolt text-warning"></i> Lightning Rate (fl/min):</label>
+              <span class="slider-val font-mono" id="sbLtgRateVal">35.0 fl/min</span>
+            </div>
+            <input type="range" id="sbLtgRate" min="0" max="150" step="1" value="35" class="custom-range">
+            <div class="slider-range-limits"><span>0</span><span>40 (Jump threshold)</span><span>150</span></div>
+          </div>
+
+          <div class="slider-control-group">
+            <div class="slider-label-row">
+              <label for="sbCape"><i class="fa-solid fa-fire text-danger"></i> CAPE (J/kg):</label>
+              <span class="slider-val font-mono" id="sbCapeVal">2800 J/kg</span>
+            </div>
+            <input type="range" id="sbCape" min="0" max="5000" step="50" value="2800" class="custom-range">
+            <div class="slider-range-limits"><span>0</span><span>2000 (High)</span><span>5000 J/kg</span></div>
+          </div>
+
+          <div class="slider-control-group">
+            <div class="slider-label-row">
+              <label for="sbCin"><i class="fa-solid fa-shield-halved text-cyan"></i> CIN (J/kg):</label>
+              <span class="slider-val font-mono" id="sbCinVal">25 J/kg</span>
+            </div>
+            <input type="range" id="sbCin" min="0" max="300" step="5" value="25" class="custom-range">
+            <div class="slider-range-limits"><span>0 (Cap broken)</span><span>100 (Strong cap)</span><span>300</span></div>
+          </div>
+
+          <div class="slider-control-group">
+            <div class="slider-label-row">
+              <label for="sbEchoTop"><i class="fa-solid fa-cloud-arrow-up text-accent"></i> Echo Top ET_18 (km):</label>
+              <span class="slider-val font-mono" id="sbEchoTopVal">14.5 km</span>
+            </div>
+            <input type="range" id="sbEchoTop" min="2" max="22" step="0.5" value="14.5" class="custom-range">
+            <div class="slider-range-limits"><span>2 km</span><span>12 km</span><span>22 km</span></div>
+          </div>
+
+          <div class="slider-control-group">
+            <div class="slider-label-row">
+              <label for="sbCtt"><i class="fa-solid fa-satellite text-blue"></i> Cloud Top Temp (°C):</label>
+              <span class="slider-val font-mono" id="sbCttVal">-65.0 °C</span>
+            </div>
+            <input type="range" id="sbCtt" min="-90" max="20" step="1" value="-65" class="custom-range">
+            <div class="slider-range-limits"><span>-90 °C (Deep core)</span><span>-40 °C</span><span>+20 °C</span></div>
+          </div>
+        </div>
+
+        <!-- Real-Time AI Prediction Output Panel -->
+        <div class="sandbox-prediction-panel" id="sandboxPredPanel">
+          <div class="pred-summary-card">
+            <div class="pred-header">
+              <span class="pred-title"><i class="fa-solid fa-microchip text-accent"></i> Instant Model Nowcast Prediction</span>
+              <span class="badge badge-severe" id="sbRiskBadge">Severe Storm</span>
+            </div>
+            <div class="pred-gauges-row">
+              <div class="sb-prob-box">
+                <span class="sb-prob-lbl">30-Min Probability</span>
+                <span class="sb-prob-val font-mono" id="sbProb30">95.4%</span>
               </div>
-              <div class="res-row">
-                <span>60-Min Thunderstorm Prob:</span>
-                <strong class="font-mono text-warning" id="res60mProb">--%</strong>
+              <div class="sb-prob-box">
+                <span class="sb-prob-lbl">60-Min Probability</span>
+                <span class="sb-prob-val font-mono" id="sbProb60">91.8%</span>
               </div>
-              <div class="res-row">
-                <span>90-Min Thunderstorm Prob:</span>
-                <strong class="font-mono" id="res90mProb">--%</strong>
-              </div>
-              <div class="res-row">
-                <span>Lightning Threat Class:</span>
-                <span class="badge badge-severe" id="resLtgClass">--</span>
-              </div>
-              <div class="res-row">
-                <span>Storm Morphological Type:</span>
-                <strong id="resStormType">--</strong>
+              <div class="sb-prob-box">
+                <span class="sb-prob-lbl">Predicted Severity Index</span>
+                <span class="sb-prob-val font-mono text-danger" id="sbSeverityIndex">8.8 / 10</span>
               </div>
             </div>
-
-            <div class="sandbox-drivers" id="sandboxDrivers">
-              <!-- Dynamic drivers -->
+            <div class="pred-xai-statement" id="sbXaiText">
+              High CAPE (2800 J/kg) with minimal CIN (25 J/kg) enables rapid deep updraft growth. Radar reflectivity exceeds 50 dBZ accompanied by active lightning flashes.
             </div>
           </div>
         </div>
       </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnDismissSandbox">Close Sandbox</button>
+      </div>
     </div>
   </div>
 
-  <!-- Interactive Modal: Thermodynamic Skew-T Sounding Profile -->
+  <!-- 3. Skew-T Sounding Modal -->
   <div class="modal-overlay hidden" id="soundingModal">
     <div class="modal-container large-modal">
       <div class="modal-header">
-        <h2><i class="fa-solid fa-chart-area text-accent"></i> Thermodynamic Skew-T Sounding Profile &amp; Convective Instability</h2>
+        <h2><i class="fa-solid fa-chart-area text-accent"></i> Atmospheric Sounding Profile (Skew-T Log-P)</h2>
         <button class="modal-close" id="btnCloseSounding"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
-        <!-- Sounding Instability Metrics Grid -->
-        <div class="metrics-summary-banner" id="soundingSummaryBanner">
-          <div class="metric-big-box">
-            <span class="m-val text-danger" id="sndCapeVal">-- J/kg</span>
-            <span class="m-lbl">SBCAPE Instability</span>
-          </div>
-          <div class="metric-big-box">
-            <span class="m-val text-success" id="sndCinVal">-- J/kg</span>
-            <span class="m-lbl">SBCIN Capping</span>
-          </div>
-          <div class="metric-big-box">
-            <span class="m-val text-danger" id="sndLiVal">-- °C</span>
-            <span class="m-lbl">Lifted Index (LI)</span>
-          </div>
-          <div class="metric-big-box">
-            <span class="m-val text-warning" id="sndKIndexVal">--</span>
-            <span class="m-lbl">K-Index (TS Potential)</span>
-          </div>
-          <div class="metric-big-box">
-            <span class="m-val" id="sndShearVal">-- m/s</span>
-            <span class="m-lbl">0-6 km Bulk Shear</span>
-          </div>
-          <div class="metric-big-box">
-            <span class="m-val" id="sndPwatVal">-- mm</span>
-            <span class="m-lbl">Precipitable Water</span>
-          </div>
-        </div>
-
-        <div class="sounding-content-layout">
-          <!-- Canvas Plot for Skew-T Diagram -->
-          <div class="skewt-canvas-wrapper">
-            <canvas id="skewTCanvas" width="620" height="520"></canvas>
+        <div class="sounding-modal-grid">
+          <div class="skewt-canvas-container">
+            <canvas id="skewtCanvas" width="460" height="380"></canvas>
             <div class="skewt-legend">
-              <span class="sk-leg-item"><span class="sk-dot red-dot"></span> Environmental Temp (T)</span>
-              <span class="sk-leg-item"><span class="sk-dot green-dot"></span> Dewpoint (Td)</span>
-              <span class="sk-leg-item"><span class="sk-dot cyan-dot"></span> Parcel Ascent (CAPE)</span>
-              <span class="sk-leg-item"><span class="sk-dot slate-dot"></span> Hail Growth (-10°C to -30°C)</span>
+              <span class="lg-t"><span class="lg-line red-line"></span> Temperature (°C)</span>
+              <span class="lg-td"><span class="lg-line green-line"></span> Dewpoint (°C)</span>
+              <span class="lg-parcel"><span class="lg-line yellow-dashed"></span> Lifted Parcel</span>
             </div>
           </div>
-
-          <!-- Vertical Sounding Levels Table -->
-          <div class="sounding-table-wrapper">
-            <h3 class="section-title">Vertical Atmospheric Profile Levels</h3>
-            <table class="metrics-table sounding-table">
-              <thead>
-                <tr>
-                  <th>Pressure</th>
-                  <th>Height (MSL)</th>
-                  <th>Temp (T)</th>
-                  <th>Dewpoint (Td)</th>
-                  <th>Wind Speed</th>
-                  <th>Theta-E</th>
-                </tr>
-              </thead>
-              <tbody id="soundingTableBody">
-                <!-- Populated dynamically -->
-              </tbody>
-            </table>
+          <div class="sounding-params-panel">
+            <h3>Calculated Convective Indices</h3>
+            <div class="params-table" id="soundingParamsTable">
+              <div class="param-row"><span class="p-name">CAPE (SBCAPE)</span><strong class="p-val font-mono text-danger" id="sndCapeVal">-- J/kg</strong></div>
+              <div class="param-row"><span class="p-name">CIN (Convective Inhibition)</span><strong class="p-val font-mono text-cyan" id="sndCinVal">-- J/kg</strong></div>
+              <div class="param-row"><span class="p-name">Lifted Condensation Level (LCL)</span><strong class="p-val font-mono" id="sndLclVal">-- m</strong></div>
+              <div class="param-row"><span class="p-name">Level of Free Convection (LFC)</span><strong class="p-val font-mono" id="sndLfcVal">-- m</strong></div>
+              <div class="param-row"><span class="p-name">Equilibrium Level (EL)</span><strong class="p-val font-mono text-blue" id="sndElVal">-- m</strong></div>
+              <div class="param-row"><span class="p-name">Total-Totals Index (TT)</span><strong class="p-val font-mono text-warning" id="sndTtVal">--</strong></div>
+              <div class="param-row"><span class="p-name">K-Index (KI)</span><strong class="p-val font-mono" id="sndKiVal">--</strong></div>
+              <div class="param-row"><span class="p-name">Showalter Index (SI)</span><strong class="p-val font-mono" id="sndSiVal">--</strong></div>
+              <div class="param-row"><span class="p-name">0-6 km Bulk Wind Shear</span><strong class="p-val font-mono" id="sndShearVal">-- m/s</strong></div>
+            </div>
           </div>
         </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnDismissSounding">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Interactive Modal: Meteogram Time-Series Evolution -->
+  <!-- 4. Meteogram Modal -->
   <div class="modal-overlay hidden" id="meteogramModal">
     <div class="modal-container large-modal">
       <div class="modal-header">
-        <h2><i class="fa-solid fa-chart-line text-accent"></i> Convective Evolution Meteogram (-60m to +90m)</h2>
+        <h2><i class="fa-solid fa-timeline text-accent"></i> Convective Evolution Meteogram (-60m to +90m)</h2>
         <button class="modal-close" id="btnCloseMeteogram"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
-        <p class="modal-desc">
-          Multimodal time-series tracking physical radar core intensification, INSAT-3D cloud cooling rates, lightning flash frequency spikes, and AI forecast probabilities across the full observation and nowcast horizon.
-        </p>
-        <div class="meteogram-canvas-wrapper">
-          <canvas id="meteogramCanvas" width="880" height="420"></canvas>
+        <div class="meteogram-container">
+          <canvas id="meteogramCanvas" width="760" height="340"></canvas>
         </div>
-        <div class="meteogram-legend">
-          <span class="mg-leg-item"><span class="mg-dot orange-dot"></span> Radar Core dBZ</span>
-          <span class="mg-leg-item"><span class="mg-dot blue-dot"></span> Cloud Top Temp (°C)</span>
-          <span class="mg-leg-item"><span class="mg-dot yellow-dot"></span> Flash Rate (f/min)</span>
-          <span class="mg-leg-item"><span class="mg-dot red-dot"></span> 30m Storm Prob (%)</span>
-          <span class="mg-leg-item"><span class="mg-dot cyan-dot"></span> 60m Storm Prob (%)</span>
-        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnDismissMeteogram">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Interactive Modal: Model AI Verification Metrics & Stats -->
+  <!-- 5. Model Stats & Verification Benchmarks Modal -->
   <div class="modal-overlay hidden" id="metricsModal">
-    <div class="modal-container large-modal">
+    <div class="modal-container">
       <div class="modal-header">
-        <h2><i class="fa-solid fa-chart-line text-accent"></i> Model Verification &amp; Multi-Model AI Benchmarks</h2>
+        <h2><i class="fa-solid fa-chart-line text-accent"></i> Model AI Stats &amp; Verification Benchmarks</h2>
         <button class="modal-close" id="btnCloseMetrics"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
-        <!-- Sub-tabs: Operational Metrics vs Benchmark -->
-        <div class="modal-subtabs">
-          <button class="subtab-btn active" id="btnTabOperational">Operational Verification Matrix</button>
-          <button class="subtab-btn" id="btnTabBenchmark">Multi-Model AI Benchmark (XGBoost vs Optical Flow vs ConvLSTM)</button>
-        </div>
-
-        <!-- Tab 1: Operational Validation Metrics -->
-        <div id="tabContentOperational" class="subtab-content">
-          <div class="metrics-summary-banner">
-            <div class="metric-big-box">
-              <span class="m-val">0.8921</span>
-              <span class="m-lbl">Overall Multi-Lead ROC-AUC</span>
-            </div>
-            <div class="metric-big-box">
-              <span class="m-val">99.5%</span>
-              <span class="m-lbl">Lightning Risk Accuracy</span>
-            </div>
-            <div class="metric-big-box">
-              <span class="m-val">0.9226</span>
-              <span class="m-lbl">Peak Threat Score (CSI @ 60m)</span>
-            </div>
-            <div class="metric-big-box">
-              <span class="m-val">97.6%</span>
-              <span class="m-lbl">Probability of Detection (POD)</span>
-            </div>
+        <div class="metrics-summary-grid">
+          <div class="metric-card">
+            <span class="m-lbl">Overall ROC-AUC</span>
+            <span class="m-val text-accent font-mono" id="metricRocAuc">0.892</span>
           </div>
-
-          <h3 class="section-title">Lead-Time Forecast Verification Matrix</h3>
-          <table class="metrics-table">
-            <thead>
-              <tr>
-                <th>Lead Horizon</th>
-                <th>ROC-AUC</th>
-                <th>Accuracy</th>
-                <th>Precision</th>
-                <th>POD (Recall)</th>
-                <th>CSI (Threat Score)</th>
-                <th>FAR (False Alarm)</th>
-                <th>TP / FP / FN / TN</th>
-              </tr>
-            </thead>
-            <tbody id="metricsTableBody">
-              <!-- Populated via API -->
-            </tbody>
-          </table>
-
-          <h3 class="section-title">Physics-Grounding &amp; Feature Importances (SHAP / Gain)</h3>
-          <div class="feature-importance-bars" id="featureImportanceBars">
-            <!-- Feature bars -->
+          <div class="metric-card">
+            <span class="m-lbl">F1-Score</span>
+            <span class="m-val text-success font-mono" id="metricF1">0.841</span>
+          </div>
+          <div class="metric-card">
+            <span class="m-lbl">Critical Success Index (CSI)</span>
+            <span class="m-val text-warning font-mono" id="metricCsi">0.725</span>
+          </div>
+          <div class="metric-card">
+            <span class="m-lbl">False Alarm Ratio (FAR)</span>
+            <span class="m-val text-danger font-mono" id="metricFar">0.148</span>
           </div>
         </div>
-
-        <!-- Tab 2: Multi-Model Benchmark Comparison -->
-        <div id="tabContentBenchmark" class="subtab-content hidden">
-          <table class="metrics-table benchmark-table">
-            <thead>
-              <tr>
-                <th>Model Architecture</th>
-                <th>Type / Approach</th>
-                <th>30m ROC-AUC</th>
-                <th>30m CSI Threat</th>
-                <th>POD (Recall)</th>
-                <th>FAR (False Alarm)</th>
-                <th>Heidke (HSS)</th>
-                <th>Latency</th>
-              </tr>
-            </thead>
-            <tbody id="benchmarkTableBody">
-              <!-- Populated via API -->
-            </tbody>
-          </table>
-
-          <h3 class="section-title">Lead-Time CSI Degradation Curves (15m to 90m)</h3>
-          <div class="benchmark-curves-grid" id="benchmarkCurvesGrid">
-            <!-- Populated via JS -->
-          </div>
-        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnDismissMetrics">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Interactive Modal: Public Alert Broadcast Simulator -->
-  <div class="modal-overlay hidden" id="broadcastModal">
-    <div class="modal-container phone-modal">
-      <div class="modal-header">
-        <h2><i class="fa-solid fa-tower-broadcast text-danger"></i> CAP Emergency Broadcast Demo</h2>
-        <button class="modal-close" id="btnCloseBroadcast"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="phone-mockup">
-          <div class="phone-screen">
-            <div class="phone-notch"></div>
-            <div class="phone-header">
-              <span>NDMA / IMD Alert Service</span>
-              <span>LIVE</span>
-            </div>
-            <div class="emergency-alert-card">
-              <div class="alert-siren">
-                <i class="fa-solid fa-bell text-danger"></i>
-                <strong>SEVERE WEATHER EMERGENCY</strong>
-              </div>
-              <h4 id="mockupHeadline">RED ALERT: Thunderstorm &amp; Lightning Hazard</h4>
-              <p id="mockupBody">Dangerous lightning and gale winds approaching Hyderabad. Take shelter immediately inside sturdy buildings. Avoid open fields and trees.</p>
-              <div class="mockup-footer">
-                <span>Issued by Aerocast-AI Early Warning Engine</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Interactive Modal: Privacy Policy & Data Governance -->
+  <!-- 6. Privacy Policy Modal -->
   <div class="modal-overlay hidden" id="privacyModal">
     <div class="modal-container">
       <div class="modal-header">
-        <h2><i class="fa-solid fa-user-shield text-cyan"></i> Privacy Policy &amp; Data Governance</h2>
+        <h2><i class="fa-solid fa-user-shield text-accent"></i> Privacy Policy &amp; Data Governance</h2>
         <button class="modal-close" id="btnClosePrivacy"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
@@ -1102,31 +1357,22 @@
             Aerocast-AI is committed to full user privacy and data minimization. This platform operates as an open meteorological early-warning cockpit with zero monetization of personal data.
           </p>
         </div>
-
         <div class="privacy-grid">
           <div class="privacy-card">
             <h4><i class="fa-solid fa-ban text-success"></i> 1. Zero Personal Data Tracking</h4>
-            <p>We do not collect names, phone numbers, email addresses, IP logs, or personal identifiers. No third-party marketing scripts or behavioral tracking cookies are used.</p>
+            <p>We do not collect names, phone numbers, email addresses, IP logs, or personal identifiers.</p>
           </div>
-
           <div class="privacy-card">
             <h4><i class="fa-solid fa-location-crosshairs text-cyan"></i> 2. Ephemeral Geolocation Processing</h4>
-            <p>Searched locations and GPS coordinates are processed strictly in volatile memory to calculate distance to radar storm cells and fetch local nowcasts. Coordinates are never persisted in databases.</p>
+            <p>Searched locations are processed strictly in volatile memory. Coordinates are never persisted in databases.</p>
           </div>
-
           <div class="privacy-card">
             <h4><i class="fa-solid fa-satellite text-blue"></i> 3. Public Meteorological Ingestion</h4>
-            <p>Doppler radar reflectivity, INSAT-3D infrared cloud temperatures, and lightning strike data are gathered from open meteorological services (OpenWeatherMap, IMD, NOAA) for disaster risk reduction.</p>
+            <p>Doppler radar reflectivity, INSAT-3D temperatures, and lightning data are gathered from open services for disaster risk reduction.</p>
           </div>
-
           <div class="privacy-card">
-            <h4><i class="fa-solid fa-microchip text-warning"></i> 4. Client-Side Simulation &amp; Soundings</h4>
-            <p>Thermodynamic sounding analysis (Skew-T Log-P), time-series meteogram rendering, and What-If scenario simulations run locally in your web browser runtime.</p>
-          </div>
-
-          <div class="privacy-card">
-            <h4><i class="fa-solid fa-shield-halved text-danger"></i> 5. NDMA / IMD Standard Compliance</h4>
-            <p>Emergency advisories adhere to National Disaster Management Authority (NDMA) and Common Alerting Protocol (CAP v1.2) standards for life safety.</p>
+            <h4><i class="fa-solid fa-shield-halved text-danger"></i> 4. NDMA / IMD Standard Compliance</h4>
+            <p>Emergency advisories adhere to National Disaster Management Authority (NDMA) and Common Alerting Protocol (CAP v1.2) standards.</p>
           </div>
         </div>
       </div>
@@ -1135,94 +1381,6 @@
       </div>
     </div>
   </div>
-
-  <!-- ================= AI Weather & Disaster Safety Assistant Chatbot ================= -->
-  <!-- Floating Chatbot Trigger Button -->
-  <button class="chatbot-trigger-btn" id="btnOpenChatbot" title="Ask AI Weather & Safety Assistant">
-    <i class="fa-solid fa-headset"></i>
-    <span class="chatbot-btn-text">Ask AI Assistant</span>
-    <span class="chat-status-pulse"></span>
-  </button>
-
-  <!-- Expandable Chatbot Drawer -->
-  <div class="chatbot-drawer hidden" id="chatbotDrawer" role="dialog" aria-label="AI Weather & Safety Assistant">
-    <div class="chatbot-header">
-      <div class="chatbot-title-group">
-        <div class="chatbot-avatar">
-          <i class="fa-solid fa-bolt-lightning"></i>
-        </div>
-        <div>
-          <h4>Aerocast AI Assistant</h4>
-          <span class="chatbot-status-sub" id="chatbotStatusTag">Online • Live Telemetry Synced</span>
-        </div>
-      </div>
-      <div class="chatbot-header-actions">
-        <button class="chat-tool-btn" id="btnClearChat" title="Clear conversation history">
-          <i class="fa-solid fa-rotate-left"></i>
-        </button>
-        <button class="chat-tool-btn" id="btnCloseChatbot" title="Close assistant">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- Chat Messages Scroll Container -->
-    <div class="chatbot-messages" id="chatbotMessages">
-      <!-- Populated dynamically with initial bot greeting -->
-    </div>
-
-    <!-- Quick Question Suggestion Chips -->
-    <div class="chatbot-suggestions" id="chatbotSuggestions">
-      <button class="chat-chip" data-query="Is it safe to go outside right now?">
-        <i class="fa-solid fa-shield-halved text-cyan"></i> Is it safe outside?
-      </button>
-      <button class="chat-chip" data-query="When will rain and storm reach my area?">
-        <i class="fa-solid fa-cloud-showers-heavy text-blue"></i> Rain timing &amp; ETA
-      </button>
-      <button class="chat-chip" data-query="What precautions should I take for lightning and wind?">
-        <i class="fa-solid fa-bolt text-warning"></i> Lightning precautions
-      </button>
-      <button class="chat-chip" data-query="Explain the radar map colors and dBZ in simple terms.">
-        <i class="fa-solid fa-palette text-accent"></i> Explain radar colors
-      </button>
-      <button class="chat-chip" data-query="What is a Schultz Lightning Jump?">
-        <i class="fa-solid fa-chart-line text-danger"></i> Schultz Lightning Jump
-      </button>
-    </div>
-
-    <!-- Chat Input Form -->
-    <div class="chatbot-footer">
-      <form class="chatbot-input-form" id="chatbotForm">
-        <input 
-          type="text" 
-          id="chatbotInput" 
-          class="chatbot-input" 
-          placeholder="Ask about rain, storm arrival, safety rules, or radar..." 
-          autocomplete="off"
-          spellcheck="false"
-          aria-label="Chat input query"
-        >
-        <button type="submit" class="chatbot-send-btn" id="btnSendChat" title="Send Question" aria-label="Send message">
-          <i class="fa-solid fa-paper-plane"></i>
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Operational Footer Bar -->
-  <footer class="app-footer">
-    <div class="footer-left">
-      <span class="footer-badge"><i class="fa-solid fa-shield-halved"></i> NDMA / IMD CAP Standard v1.2</span>
-      <span class="footer-sep">|</span>
-      <span>Real-Time Convective Decision Support Platform</span>
-    </div>
-    <div class="footer-right">
-      <a href="#" id="linkFooterPrivacy" class="footer-privacy-link"><i class="fa-solid fa-user-shield"></i> Privacy Policy &amp; Data Governance</a>
-    </div>
-  </footer>
-
-  <!-- Toast Notification Container -->
-  <div class="toast-container" id="toastContainer"></div>
 
   <!-- Audio Alert Chime -->
   <audio id="alertAudio" preload="none">
@@ -1253,8 +1411,7 @@
     window.firebaseAnalytics = analytics;
   </script>
 
-  <!-- Custom JS Application -->
+  <!-- Custom JS Application Logic -->
   <script src="app.js"></script>
 </body>
 </html>
-
