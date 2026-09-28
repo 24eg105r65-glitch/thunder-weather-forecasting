@@ -1382,6 +1382,64 @@
     </div>
   </div>
 
+  <!-- 7. Active CAP Early Warnings Modal -->
+  <div class="modal-overlay hidden" id="alertsModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-triangle-exclamation text-danger"></i> Active CAP Early Warnings &amp; Dissemination</h2>
+        <button class="modal-close" id="btnCloseAlerts"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert-active-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="badge badge-severe" id="modalAlertSeverity">EXTREME THREAT</span>
+            <span class="text-xs font-mono text-cyan">CAP v1.2 // SEC-9042</span>
+          </div>
+          <h3 class="text-base font-bold text-white mb-2" id="modalAlertHeadline">RED ALERT: Severe Thunderstorm &amp; Lightning Warning</h3>
+          <p class="text-xs text-slate-300 leading-relaxed mb-3" id="modalAlertDetails">
+            Intense convective core with dangerous cloud-to-ground lightning (142 fl/min) and severe downburst wind gusts (75-90 km/h) approaching the urban sector.
+          </p>
+          <div class="space-y-2 text-xs">
+            <div class="bg-surface-container p-2 rounded">
+              <strong class="text-white block mb-1">Impact Zones:</strong>
+              <div class="flex flex-wrap gap-1" id="modalAlertZones">
+                <span class="zone-tag">Gachibowli</span>
+                <span class="zone-tag">HITEC City</span>
+                <span class="zone-tag">Secunderabad</span>
+                <span class="zone-tag">Medchal</span>
+              </div>
+            </div>
+            <div class="bg-surface-container p-2 rounded">
+              <strong class="text-warning block mb-1">Expected Hazards:</strong>
+              <ul class="list-disc list-inside text-slate-300 space-y-1" id="modalAlertHazards">
+                <li>Frequent high-peak Cloud-to-Ground lightning strikes</li>
+                <li>Localized torrential precipitation (&gt;35 mm/h)</li>
+                <li>Damaging convective microburst winds (up to 90 km/h)</li>
+              </ul>
+            </div>
+            <div class="bg-surface-container p-2 rounded">
+              <strong class="text-cyan block mb-1">NDMA Safety Directives:</strong>
+              <ul class="list-disc list-inside text-slate-300 space-y-1" id="modalAlertSafety">
+                <li>Seek immediate shelter inside a sturdy building or vehicle</li>
+                <li>Avoid open fields, terraces, water bodies, and metal structures</li>
+                <li>Disconnect sensitive electrical appliances from power sockets</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer flex items-center justify-between">
+        <a href="/api/alerts/geojson" target="_blank" class="btn btn-outline btn-sm">
+          <i class="fa-solid fa-file-code"></i> Export GeoJSON
+        </a>
+        <button class="btn btn-secondary" id="btnDismissAlerts">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
   <!-- Audio Alert Chime -->
   <audio id="alertAudio" preload="none">
     <source src="https://cdn.freesound.org/previews/250/250629_4486188-lq.mp3" type="audio/mpeg">
